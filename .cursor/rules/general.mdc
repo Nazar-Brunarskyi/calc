@@ -1,0 +1,146 @@
+---
+description: General TypeScript standards — no any; multi-arg functions use I<FuncName>Props; React uses IProps and I-prefixed local interfaces
+alwaysApply: true
+---
+
+# General coding standards
+
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **Type, interface, and hook modules** must use **kebab-case** filenames (`name-name.ts`, e.g. `user-profile.ts`, `use-media-query.ts`); details and examples are in that doc.
+
+## No `any`
+
+Do not use `any`. Prefer explicit types, generics, or `unknown` with narrowing.
+
+```typescript
+// ❌ BAD
+function parse(input: any): number {
+  return Number(input);
+}
+
+// ✅ GOOD — explicit type
+function parse(input: string | number): number {
+  return Number(input);
+}
+
+// ✅ GOOD — unknown + narrowing
+function parse(input: unknown): number {
+  if (typeof input === "string" || typeof input === "number") {
+    return Number(input);
+  }
+  throw new TypeError("Expected string or number");
+}
+```
+
+```typescript
+// ❌ BAD
+const data: any = JSON.parse(raw);
+
+// ✅ GOOD
+interface ParsedShape {
+  id: string;
+  count: number;
+}
+const data = JSON.parse(raw) as ParsedShape;
+// or validate with a schema library and typed result
+```
+
+## Multi-argument functions → `I<FuncName>Props`
+
+If a function (or method) has **more than one** parameter, replace positional parameters with a **single object** whose type is an interface named **`I` + `PascalCase` function name + `Props`**.
+
+Single-parameter functions stay as-is (no props interface required).
+
+```typescript
+// ❌ BAD — more than one positional argument
+function createUser(name: string, email: string, role: "admin" | "user") {
+  // ...
+}
+
+// ✅ GOOD — one object + ICreateUserProps
+interface ICreateUserProps {
+  name: string;
+  email: string;
+  role: "admin" | "user";
+}
+
+function createUser(props: ICreateUserProps) {
+  const { name, email, role } = props;
+  // ...
+}
+
+// optional: destructure in the signature
+function createUser({ name, email, role }: ICreateUserProps) {
+  // ...
+}
+```
+
+```typescript
+// ✅ OK — only one argument, no I*Props needed
+function getUserById(id: string) {
+  // ...
+}
+```
+
+For **class methods**, use the class method name in the interface: e.g. `save` with two args → `ISaveProps` (or `IUserRepositorySaveProps` if you need disambiguation across classes).
+
+```typescript
+// ❌ BAD
+class UserRepository {
+  update(id: string, patch: Partial<User>) {}
+}
+
+// ✅ GOOD
+interface IUpdateProps {
+  id: string;
+  patch: Partial<User>;
+}
+
+class UserRepository {
+  update(props: IUpdateProps) {
+    const { id, patch } = props;
+  }
+}
+```
+
+## React components — props and local types
+
+Use **`interface`** for object shapes in components. Name them with an **`I` prefix** (`IUser`, `IProps`, …). Do not rely on implicit `any` for props.
+
+### Local shapes (same file only)
+
+If a shape is used only inside one component file, define it **above** the component in that file.
+
+```tsx
+interface IUser {
+  id: string;
+  name: string;
+}
+
+export function UserCard() {
+  const user: IUser = {
+    id: "1",
+    name: "John",
+  };
+
+  return <div>{user.name}</div>;
+}
+```
+
+### Component props
+
+Every component that accepts props must be **explicitly** typed. If the props shape is not reused elsewhere, use **`interface IProps`** in the same file.
+
+```tsx
+interface IProps {
+  title: string;
+  onClick: () => void;
+}
+
+export function Button({ title, onClick }: IProps) {
+  return <button onClick={onClick}>{title}</button>;
+}
+```
+
+**Rule of thumb:** shape used only here → same-file `interface` with `I` prefix (`IProps` for props, `IUser` for a local entity, etc.). When an object shape is shared across modules, extract it to `src/interfaces`; when a shared **`type`** alias or union/utility type is needed, use `src/types` (see `ARCHITECTURE.md`) — avoid over-engineering until then.
+
+**Note:** Plain functions with several parameters still use **`I` + function name + `Props`** (e.g. `ICreateUserProps` above), not `IProps`. **`IProps`** is for **React component** props colocated in the component file.
