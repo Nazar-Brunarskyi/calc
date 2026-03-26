@@ -2,6 +2,13 @@
 
 This document describes how the **calc** frontend is organized. The stack is **Next.js** (App Router), **React**, **TypeScript**, and **Tailwind CSS**.
 
+## Component map
+
+The repo keeps a **catalog of UI building blocks** in [COMPONENT_MAP.md](./COMPONENT_MAP.md) at the project root: component names and file paths for App Router entries, colocated route components, `components/ui/` (shadcn), and `src/components/`.
+
+- **Before adding UI:** Check that file to see whether a suitable component already exists and can be **reused or extended** instead of duplicating.
+- **When you add, rename, move, or remove** a registered component, **update `COMPONENT_MAP.md` in the same change** so it stays the source of truth.
+
 ## Project structure rules
 
 ### 1. Page-specific components
@@ -38,6 +45,7 @@ export default function DashboardPage() {
 If a component is **reused across routes or app-wide**, place it in a global components directory.
 
 - Use: `src/components`
+- **shadcn/ui** primitives live under `components/ui/` (see `components.json`); register them in [COMPONENT_MAP.md](./COMPONENT_MAP.md) when added.
 - Typical contents: UI primitives (buttons, inputs, modals), layout shells, and other shared building blocks.
 
 **Example:**

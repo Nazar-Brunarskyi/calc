@@ -1,11 +1,19 @@
 ---
-description: General TypeScript standards — no any; multi-arg functions use I<FuncName>Props; React uses IProps and I-prefixed local interfaces
+description: General TypeScript standards — no any; multi-arg functions use I<FuncName>Props; React uses IProps; check COMPONENT_MAP before new UI; see ARCHITECTURE
 alwaysApply: true
 ---
 
 # General coding standards
 
 For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **Type, interface, and hook modules** must use **kebab-case** filenames (`name-name.ts`, e.g. `user-profile.ts`, `use-media-query.ts`); details and examples are in that doc.
+
+## Component map — existence and reuse
+
+Before implementing **new** UI (a new component file or a one-off that could become shared), open [COMPONENT_MAP.md](../../COMPONENT_MAP.md) at the repository root.
+
+- **Check** whether something already exists under the listed paths (`components/ui/`, `src/components/`, `app/.../components/`, route layouts/pages).
+- **Prefer reuse:** import and compose or extend an existing component when it fits; avoid near-duplicates.
+- **Keep the map current:** when you add, rename, move, or remove a component that belongs in the catalog, update `COMPONENT_MAP.md` in the **same** change (see ARCHITECTURE.md).
 
 ## No `any`
 
