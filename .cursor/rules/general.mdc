@@ -1,11 +1,27 @@
 ---
-description: General TypeScript standards — no any; multi-arg functions use I<FuncName>Props; React uses IProps; check COMPONENT_MAP before new UI; see ARCHITECTURE
+description: General TypeScript standards — filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; check COMPONENT_MAP; see ARCHITECTURE
 alwaysApply: true
 ---
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **Type, interface, and hook modules** must use **kebab-case** filenames (`name-name.ts`, e.g. `user-profile.ts`, `use-media-query.ts`); details and examples are in that doc.
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). Folder placement and other layout rules are in that doc.
+
+## Module filename suffixes (kebab-case + role)
+
+Use **kebab-case** for the base name, then a **dot-suffix** before the extension that states the module’s primary role:
+
+| Role | Pattern | Example |
+|------|---------|---------|
+| Interface module | `name-name.interface.ts` | `user-profile.interface.ts` |
+| React component | `name-name.component.tsx` | `primary-button.component.tsx` |
+| Type module (`type` aliases, unions, utilities) | `name-name.type.ts` | `api-error.type.ts` |
+| Enum module | `name-name.enum.ts` | `order-status.enum.ts` |
+| Constants | `name-name.const.ts` | `routes.const.ts` |
+| Pure helpers / utilities (non-hook functions) | `name-name.util.ts` | `class-names.util.ts` |
+| Hook module | `name-name.hook.ts` | `use-media-query.hook.ts` |
+
+Use **`.tsx`** for React component files that contain JSX (not `.ts`). Apply the same idea for other single-purpose modules when adding new roles. **Do not** use a bare `name-name.ts` for new files when one of the roles above fits.
 
 ## Component map — existence and reuse
 
