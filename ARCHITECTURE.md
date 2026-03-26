@@ -112,6 +112,10 @@ import { useMediaQuery } from "@/src/hooks/use-media-query";
 
 This project keeps the App Router at the project root (`app/`) and uses **`@/*` → `./*`** in `tsconfig.json`. Shared code under `src/` is imported with the `src/` segment in the path, for example `@/src/components/...`, `@/src/types/...`, `@/src/interfaces/...`, `@/src/constants/...`, and `@/src/hooks/...`. If you later move `app/` under `src/` (full `src/` layout), update `paths` so `@/*` still resolves correctly.
 
+### Library docs
+
+When a reusable library under `lib/` has non-obvious usage, keep a local `README.md` next to it and link to it from higher-level docs when relevant. For example, `lib/app-builder/README.md` documents how to define methods, register modules, share request context, and use `AppBuilderError`.
+
 ## Rule of thumb
 
 - **Used once?** Keep it next to the page: `app/<route>/components/` (and colocate local types, interfaces, constants, or hooks there if they are not shared).

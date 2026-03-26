@@ -7,6 +7,8 @@ alwaysApply: true
 
 For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). Folder placement and other layout rules are in that doc.
 
+For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone. Example: `lib/app-builder/README.md`.
+
 ## Module filename suffixes (kebab-case + role)
 
 Use **kebab-case** for the base name, then a **dot-suffix** before the extension that states the module’s primary role:
