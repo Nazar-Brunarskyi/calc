@@ -114,7 +114,7 @@ This project keeps the App Router at the project root (`app/`) and uses **`@/*` 
 
 ### Library docs
 
-When a reusable library under `lib/` has non-obvious usage, keep a local `README.md` next to it and link to it from higher-level docs when relevant. For example, `lib/app-builder/README.md` documents how to define methods, register modules, share request context, and use `AppBuilderError`.
+When a reusable library under `lib/` has non-obvious usage, keep a local `README.md` next to it and link to it from higher-level docs when relevant.
 
 ## Rule of thumb
 
