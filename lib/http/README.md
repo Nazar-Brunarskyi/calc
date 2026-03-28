@@ -12,6 +12,7 @@ Shared types (import paths use the `@/` alias):
 
 - `IRouteHandlerContext` — `@/lib/http/route-handler-context.interface` (base shape for the App Router handler `context` argument; use this name for default generics and middleware that only need optional `params`)
 - `TRouteMiddleware` — `@/lib/http/route-middleware.type`
+- `ICreateRouteHandlerProps` — `@/lib/http/create-route-handler.util` (optional `middleware` for `createRouteHandler` and `createGlobalRouteHandler`)
 - `TRouteHandler` / `TRouteHandlerReturn` — `@/lib/http/route-handler.type`
 - `TWrappedRouteHandler` — `@/lib/http/wrapped-route-handler.type`
 
@@ -51,7 +52,7 @@ export const GET = createRouteHandler<ICtx>(
 
 ## `createGlobalRouteHandler` (MongoDB preset)
 
-When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/src/global-route-handler.util`. It is `createRouteHandler` with `withMongoDbConnection` always first; optional `middleware` runs after that.
+When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/src/global-route-handler.util`. It is `createRouteHandler` with `withMongoDbConnection` always first; optional `middleware` runs after that. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
 
 ```ts
 import type { NextRequest } from "next/server";
