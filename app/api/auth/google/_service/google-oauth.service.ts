@@ -1,7 +1,13 @@
+import {
+  SESSION_MAX_AGE_SECONDS,
+  sessionRepository,
+} from "@/app/api/_shared/repository/session/session.repository";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
 import { tryCatchService } from "@/app/api/_shared/services/try-catch/try-catch.service";
+import type { IRedirectResponseCookie } from "@/app/api/_shared/utils/redirect-response.util";
 import { redirectResponse } from "@/app/api/_shared/utils/redirect-response.util";
+import { SESSION_ID_COOKIE_NAME } from "@/src/constants/session-id-cookie.const";
 import { readRequiredEnv } from "@/src/utils/read-required-env.util";
 import { randomBytes } from "crypto";
 import type { NextRequest, NextResponse } from "next/server";
@@ -30,6 +36,7 @@ interface IGoogleOauthEnv {
 
 interface IGoogleOauthCallbackRedirectProps {
   query: Record<string, string>;
+  extraCookies?: IRedirectResponseCookie[];
 }
 
 interface IBuildGoogleAuthorizeUrlProps {
@@ -235,12 +242,16 @@ const handleGoogleOAuthCallback = async (
     process.env.OAUTH_SUCCESS_REDIRECT_PATH,
   );
 
-  const redirect = ({ query }: IGoogleOauthCallbackRedirectProps) =>
+  const redirect = ({
+    query,
+    extraCookies,
+  }: IGoogleOauthCallbackRedirectProps) =>
     authService.buildOauthRedirect({
       request,
       path: successPath,
       query,
       stateCookieName: GOOGLE_OAUTH_STATE_COOKIE_NAME,
+      extraCookies,
     });
 
   const env = tryCatchService.runSync(() => readGoogleOauthEnv());
@@ -299,7 +310,29 @@ const handleGoogleOAuthCallback = async (
       name: profile.name,
     });
 
-    return redirect({ query: { userId } });
+    const sessionResult = await tryCatchService.runAsync(() =>
+      sessionRepository.createSessionForUser({ userId }),
+    );
+    if (sessionResult === null) {
+      return redirect({ query: { error: "oauth_session_create" } });
+    }
+
+    return redirect({
+      query: { userId },
+      extraCookies: [
+        {
+          name: SESSION_ID_COOKIE_NAME,
+          value: sessionResult.sessionId,
+          options: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: SESSION_MAX_AGE_SECONDS,
+            path: "/",
+          },
+        },
+      ],
+    });
   } catch (error: unknown) {
     console.error(error);
     return redirect({ query: { error: "oauth_user_persist" } });

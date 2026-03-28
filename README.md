@@ -12,6 +12,8 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 
 Example: **`GET /api/users/[id]`** loads a user by id (MongoDB). Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util` so **`withRouteErrorHandler`** (structured JSON errors: **`error`**, optional **`error_code`**, optional **`snackbar`**) and **`withMongoDbConnection`** run before your handler (see `app/api/users/[id]/route.ts` and [lib/http/README.md](./lib/http/README.md)).
 
+**Google OAuth** (`/api/auth/google`, callback under `/api/auth/google/callback`): on success the app persists or updates the user, creates a row in the **`sessions`** collection, and sets an httpOnly **`session_id`** cookie (see `.env.example` for **`OAUTH_SUCCESS_REDIRECT_PATH`**). Shared cookie name: `src/constants/session-id-cookie.const.ts`.
+
 ## Getting Started
 
 Run the development server:

@@ -3,7 +3,7 @@ name: api-app-service
 description: >-
   Adds or changes App Router API services and repositories under app/api/_shared
   and provider-specific app/api/**/_service. Covers export object pattern (authService,
-  tryCatchService, userRepository), thin route.ts handlers, and MongoDB via
+  tryCatchService, userRepository, sessionRepository), thin route.ts handlers, and MongoDB via
   createGlobalRouteHandler. Use when implementing API auth flows, new OAuth providers,
   user persistence from routes, or when the user mentions app/api/_shared, _service
   folder, or repository folder for Next.js API routes.
@@ -43,9 +43,10 @@ Use this workflow when:
 | [app/api/\_shared/features/error-handling/utils/json-error-body.util.ts](../../../app/api/_shared/features/error-handling/utils/json-error-body.util.ts) | **`jsonErrorBody`** — builds the JSON object returned to clients on API errors. |
 | [src/features/error-handling/enums/error-codes/index.ts](../../../src/features/error-handling/enums/error-codes/index.ts) | **`INTERNAL_SERVER_ERROR_CODE`**, **`APP_ERROR_CODES_TYPE`** — extend the type union when adding new error-code enums. |
 | [app/api/\_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts](../../../app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts) | App-level `await connectMongoDb(); return next()` middleware; pair with `createRouteHandler` or use via `createGlobalRouteHandler`. |
-| [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | Example: `export const authService = { … }`.                                       |
+| [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | **`authService.buildOauthRedirect`** — optional **`extraCookies`** alongside cleared OAuth state cookie. |
 | [app/api/\_shared/services/try-catch/try-catch.service.ts](../../../app/api/_shared/services/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
 | [app/api/\_shared/repository/user/user.repository.ts](../../../app/api/_shared/repository/user/user.repository.ts)         | Example: `export const userRepository = { … }`.                                    |
+| [app/api/\_shared/repository/session/session.repository.ts](../../../app/api/_shared/repository/session/session.repository.ts) | Example: `export const sessionRepository = { createSessionForUser }`; **`SESSION_MAX_AGE_SECONDS`** for cookie **`maxAge`**. |
 | [app/api/\_shared/utils/redirect-response.util.ts](../../../app/api/_shared/utils/redirect-response.util.ts)                 | **`redirectResponse`** — `NextResponse.redirect` plus optional cookie sets (used by `authService` and provider flows). |
 | [app/api/auth/google/\_service/google-oauth.service.ts](../../../app/api/auth/google/_service/google-oauth.service.ts)        | Example: provider orchestration + `googleOAuthService`.                            |
 
@@ -83,6 +84,7 @@ Use this workflow when:
 
 ```typescript
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { sessionRepository } from "@/app/api/_shared/repository/session/session.repository";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { googleOAuthService } from "@/app/api/auth/google/_service/google-oauth.service";
 ```
@@ -91,5 +93,5 @@ import { googleOAuthService } from "@/app/api/auth/google/_service/google-oauth.
 
 1. Implement Google OAuth in `app/api/auth/google/_service/google-oauth.service.ts` (env, HTTP to Google, constants, `readGoogleOauthEnv`, `createAuthorizeGoogleRedirect`, `handleGoogleOAuthCallback` on `googleOAuthService`). The start route may use `tryCatchService.runSync(() => googleOAuthService.readGoogleOauthEnv())` and return JSON **500** when env is missing, then call `createAuthorizeGoogleRedirect`.
 2. Add `app/api/auth/<provider>/callback/route.ts` (and start URL route if applicable) using `createGlobalRouteHandler` when MongoDB is required.
-3. Implement `<provider>OAuthService` that calls `authService.buildOauthRedirect` (or shared helpers) and `userRepository` / new repository methods.
-4. Extend **user** schema and repository only if new fields or lookup keys are required; see [db-schema.md](../../../db-schema.md).
+3. Implement `<provider>OAuthService` that calls `authService.buildOauthRedirect` (or shared helpers; optional **`extraCookies`** for session cookies), `userRepository`, and **`sessionRepository`** when issuing browser sessions; see Google’s `google-oauth.service.ts`.
+4. Extend **user** / **session** schemas and repositories only if new fields or lookup keys are required; see [db-schema.md](../../../db-schema.md).

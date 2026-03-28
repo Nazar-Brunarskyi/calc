@@ -1,6 +1,11 @@
+import { SESSION_ID_COOKIE_NAME } from "@/src/constants/session-id-cookie.const";
 import Image from "next/image";
+import { cookies } from "next/headers";
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const showGoogleSignIn = !cookieStore.has(SESSION_ID_COOKIE_NAME);
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
@@ -35,12 +40,14 @@ export default function Home() {
           </p>
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[200px]"
-            href="/api/auth/google"
-          >
-            Sign in with Google
-          </a>
+          {showGoogleSignIn ? (
+            <a
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[200px]"
+              href="/api/auth/google"
+            >
+              Sign in with Google
+            </a>
+          ) : null}
           <a
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
