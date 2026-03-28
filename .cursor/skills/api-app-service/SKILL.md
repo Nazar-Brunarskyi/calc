@@ -31,14 +31,15 @@ Use this workflow when:
 
 | Doc / code                                                                                                                 | Why                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/service`, `auth/<provider>/service`. |
+| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/services`, `auth/<provider>/service`. |
 | [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc)                                                            | Arrow-only functions, `I*Props`, `no any`, service object exports.                 |
 | [lib/http/README.md](../../../lib/http/README.md)                                                                          | `createRouteHandler`, middleware `next()`.                                         |
 | [app/api/\_shared/route-handlers/global-route-handler.util.ts](../../../app/api/_shared/route-handlers/global-route-handler.util.ts) | Preset: composes `createRouteHandler` with **`withRouteErrorHandler`** + **`withMongoDbConnection`** for API routes that need the database. |
-| [app/api/\_shared/route-handlers/with-route-error-handler-route-middleware.util.ts](../../../app/api/_shared/route-handlers/with-route-error-handler-route-middleware.util.ts) | App-level outermost error middleware (JSON 500); used by `createGlobalRouteHandler` and optional on manual `createRouteHandler` chains. |
+| [app/api/\_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util.ts](../../../app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util.ts) | App-level outermost error middleware (JSON 500); used by `createGlobalRouteHandler` and optional on manual `createRouteHandler` chains. |
+| [app/api/\_shared/features/error-handling/instances/app-error.ts](../../../app/api/_shared/features/error-handling/instances/app-error.ts) | **`AppError`** — typed errors (`statusCode`, optional `code`) for route handlers; recognized by `withRouteErrorHandler`. |
 | [app/api/\_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts](../../../app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts) | App-level `await connectMongoDb(); return next()` middleware; pair with `createRouteHandler` or use via `createGlobalRouteHandler`. |
-| [app/api/\_shared/service/auth/auth.service.ts](../../../app/api/_shared/service/auth/auth.service.ts)                     | Example: `export const authService = { … }`.                                       |
-| [app/api/\_shared/service/try-catch/try-catch.service.ts](../../../app/api/_shared/service/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
+| [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | Example: `export const authService = { … }`.                                       |
+| [app/api/\_shared/services/try-catch/try-catch.service.ts](../../../app/api/_shared/services/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
 | [app/api/\_shared/repository/user/user.repository.ts](../../../app/api/_shared/repository/user/user.repository.ts)         | Example: `export const userRepository = { … }`.                                    |
 | [app/api/auth/google/service/google-oauth.service.ts](../../../app/api/auth/google/service/google-oauth.service.ts)        | Example: provider orchestration + `googleOAuthService`.                            |
 
@@ -48,7 +49,7 @@ Use this workflow when:
    - Only **Mongoose / DB** calls for that entity needed by API routes.
    - Export: `export const userRepository = { methodA, methodB }`.
 
-2. **Shared service** — `app/api/_shared/service/<domain>/<domain>.service.ts` (e.g. `auth/auth.service.ts`, `try-catch/try-catch.service.ts`)
+2. **Shared service** — `app/api/_shared/services/<domain>/<domain>.service.ts` (e.g. `auth/auth.service.ts`, `try-catch/try-catch.service.ts`)
    - Logic **reused across providers** (redirect + cookie clearing, try/catch → `null` for uniform error branches).
    - Export: `export const authService = { … }`, `export const tryCatchService = { runSync, runAsync }`.
 
@@ -74,7 +75,7 @@ Use this workflow when:
 ## Example import shapes
 
 ```typescript
-import { authService } from "@/app/api/_shared/service/auth/auth.service";
+import { authService } from "@/app/api/_shared/services/auth/auth.service";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { googleOAuthService } from "@/app/api/auth/google/service/google-oauth.service";
 ```

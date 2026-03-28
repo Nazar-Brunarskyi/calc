@@ -53,7 +53,7 @@ export const GET = createRouteHandler<ICtx>(
 
 ## `createGlobalRouteHandler` (MongoDB preset)
 
-When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with **`withRouteErrorHandler`** (outermost) and **`withMongoDbConnection`** always applied first; optional `middleware` from props is merged **after** those. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
+When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with middleware order **`[withRouteErrorHandler, withMongoDbConnection, …props.middleware]`**: the error wrapper is **outermost** (runs first on the way in), then the MongoDB connection step, then any optional `middleware` you pass in props. Uncaught errors become **`NextResponse.json({ error: "Internal Server Error" }, { status: 500 })`**; **`AppError`** is only distinguished in **logging** today (see `app/api/_shared/features/error-handling/`). The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
 
 ```ts
 import type { NextRequest } from "next/server";
@@ -69,4 +69,4 @@ export const GET = createGlobalRouteHandler<ICtx>(async (_req, ctx) => {
 });
 ```
 
-Routes that use **`createRouteHandler` only** do not get the global error wrapper unless you add **`withRouteErrorHandler`** (or similar) to their `middleware` array yourself; see `@/app/api/_shared/route-handlers/with-route-error-handler-route-middleware.util`.
+Routes that use **`createRouteHandler` only** do not get the global error wrapper unless you add **`withRouteErrorHandler`** (or similar) to their `middleware` array yourself; see `@/app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util`.

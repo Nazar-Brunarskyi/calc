@@ -49,19 +49,19 @@ More detail and examples: `lib/mongodb/README.md`.
 
 For `app/**/route.ts` handlers that always need MongoDB, use **`createGlobalRouteHandler`** from `app/api/_shared/route-handlers/global-route-handler.util.ts`.
 
-It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) with an Express-style **`next`** chain: outermost **`withRouteErrorHandler`** (see `app/api/_shared/route-handlers/with-route-error-handler-route-middleware.util.ts`), then **`withMongoDbConnection`** from `app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts`. That Mongo middleware **`await`s `connectMongoDb()`** and **`return next()`** so your handler runs after the connection is ready; `connectMongoDb` caches the connection globally, so repeated requests reuse the same Mongoose connection. Any extra middleware you pass in `props.middleware` runs **after** the DB middleware.
+It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) with an Express-style **`next`** chain: outermost **`withRouteErrorHandler`** (see `app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util.ts`), then **`withMongoDbConnection`** from `app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts`. That Mongo middleware **`await`s `connectMongoDb()`** and **`return next()`** so your handler runs after the connection is ready; `connectMongoDb` caches the connection globally, so repeated requests reuse the same Mongoose connection. Any extra middleware you pass in `props.middleware` runs **after** the DB middleware.
 
-You do **not** need to call `connectMongoDb()` again inside the handler unless you have a code path that bypasses this wrapper. Use the default **`mongoose`** import with **`getUserModel(mongoose)`** (or other model getters) as usual.
+You do **not** need to call `connectMongoDb()` again inside the handler unless you have a code path that bypasses this wrapper. Handlers typically call **`userRepository`** or use **`getUserModel(mongoose)`** after the global preset has connected.
 
-**Example** (pattern used in `app/api/users/[id]/route.ts`):
+**Example** (pattern used in `app/api/users/[id]/route.ts` — thin handler + repository):
 
 ```ts
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
-import { getUserModel } from "DB/schemas";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 
 interface IRouteContext {
   params: Promise<{ id: string }>;
@@ -70,13 +70,18 @@ interface IRouteContext {
 export const GET = createGlobalRouteHandler<IRouteContext>(
   async (_request: NextRequest, context: IRouteContext) => {
     const { id } = await context.params;
-    const User = getUserModel(mongoose);
-    const doc = await User.findById(id).lean();
-    if (!doc) {
+
+    if (!mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
+
+    const user = await userRepository.findUserByIdForApi({ id });
+    if (user === null) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
     return NextResponse.json({
-      user: { _id: String(doc._id), username: doc.username },
+      user: { _id: user._id, username: user.username },
     });
   },
 );

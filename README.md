@@ -9,7 +9,7 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 
 ## API routes
 
-Example: **`GET /api/users/[id]`** loads a user by id (MongoDB). Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util` so MongoDB is connected before the handler runs (see `app/api/users/[id]/route.ts`).
+Example: **`GET /api/users/[id]`** loads a user by id (MongoDB). Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util` so **`withRouteErrorHandler`** (shared JSON errors) and **`withMongoDbConnection`** run before your handler (see `app/api/users/[id]/route.ts` and [lib/http/README.md](./lib/http/README.md)).
 
 ## Getting Started
 

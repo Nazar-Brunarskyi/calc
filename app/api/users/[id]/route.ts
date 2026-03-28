@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 
-import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 
 interface IRouteContext {
   params: Promise<{ id: string }>;
@@ -17,26 +17,17 @@ export const GET = createGlobalRouteHandler<IRouteContext>(
       return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
     }
 
-    try {
-      const user = await userRepository.findUserByIdForApi({ id });
+    const user = await userRepository.findUserByIdForApi({ id });
 
-      if (user === null) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
-
-      return NextResponse.json({
-        user: {
-          _id: user._id,
-          username: user.username,
-        },
-      });
-    } catch (error: unknown) {
-      console.error(error);
-
-      return NextResponse.json(
-        { error: "Failed to fetch user" },
-        { status: 500 },
-      );
+    if (user === null) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    return NextResponse.json({
+      user: {
+        _id: user._id,
+        username: user.username,
+      },
+    });
   },
 );

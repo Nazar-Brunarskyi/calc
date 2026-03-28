@@ -9,7 +9,7 @@ For **where** to put page-local vs app-wide code (components, `src/types`, `src/
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 
-**App Router API routes (`app/**/route.ts`):** Compose handlers with **`createRouteHandler`** from `@/lib/http/create-route-handler.util` and optional **`TRouteMiddleware`** using **`next()`** (see [lib/http/README.md](../../lib/http/README.md)). Shared types and `createRouteHandler` live under **`lib/http/`**. App-level presets **`withRouteErrorHandler`**, **`withMongoDbConnection`**, and **`createGlobalRouteHandler`** live under **`app/api/_shared/route-handlers/`** (the global handler wraps `createRouteHandler` with error handling + DB connection). Placement rules for this stack are in [ARCHITECTURE.md](../../ARCHITECTURE.md) (HTTP route helpers).
+**App Router API routes (`app/**/route.ts`):** Compose handlers with **`createRouteHandler`** from `@/lib/http/create-route-handler.util` and optional **`TRouteMiddleware`** using **`next()`** (see [lib/http/README.md](../../lib/http/README.md)). Shared types and `createRouteHandler` live under **`lib/http/`**. **`withMongoDbConnection`** and **`createGlobalRouteHandler`** live under **`app/api/_shared/route-handlers/`**; **`withRouteErrorHandler`** and **`AppError`** live under **`app/api/_shared/features/error-handling/`** (`middlewares/` and `instances/`). The global handler wraps `createRouteHandler` with error handling + DB connection. Placement rules for this stack are in [ARCHITECTURE.md](../../ARCHITECTURE.md) (HTTP route helpers).
 
 ## Project Markdown files
 
@@ -62,7 +62,7 @@ export const loadUser = async (id: string): Promise<IUser | null> => {
 
 ## App Router API — service and repository exports
 
-For modules under **`app/api/_shared/service/`**, **`app/api/_shared/repository/`**, and **`app/api/**/service/`** (provider-specific), export **one object** per file as the main callable API. Use **`camelCase`** names: `authService`, `tryCatchService`, `userRepository`, `googleOAuthService`. Callers import that object and invoke methods (e.g. `authService.buildOauthRedirect(props)`).
+For modules under **`app/api/_shared/services/`**, **`app/api/_shared/repository/`**, and **`app/api/**/service/`** (provider-specific), export **one object** per file as the main callable API. Use **`camelCase`** names: `authService`, `tryCatchService`, `userRepository`, `googleOAuthService`. Callers import that object and invoke methods (e.g. `authService.buildOauthRedirect(props)`).
 
 - Keep **types** (`interface` / shared props) exported from the same file when they are API-layer only; promote to `src/interfaces` when shared more broadly (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §5).
 - **Do not** rely on many separate exported function names as the primary pattern for these layers — the object groups the module’s public surface.
@@ -92,15 +92,15 @@ export const authService = {
 ```
 
 ```typescript
-import { authService } from "@/app/api/_shared/service/auth/auth.service";
+import { authService } from "@/app/api/_shared/services/auth/auth.service";
 
 authService.buildOauthRedirect({ request, path, query, stateCookieName });
 ```
 
-**`tryCatchService`** ([`app/api/_shared/service/try-catch/try-catch.service.ts`](../../app/api/_shared/service/try-catch/try-catch.service.ts)): shared **`runSync`** / **`runAsync`** wrappers that return **`null`** on any throw so callers can use **`const`** + null checks instead of `let` + try/catch assignment. Use for API orchestration when errors are handled uniformly (e.g. redirect with a code). Do **not** use when you need **`catch (error)`** for logging or typed error handling — keep an explicit `try` / `catch` there.
+**`tryCatchService`** ([`app/api/_shared/services/try-catch/try-catch.service.ts`](../../app/api/_shared/services/try-catch/try-catch.service.ts)): shared **`runSync`** / **`runAsync`** wrappers that return **`null`** on any throw so callers can use **`const`** + null checks instead of `let` + try/catch assignment. Use for API orchestration when errors are handled uniformly (e.g. redirect with a code). Do **not** use when you need **`catch (error)`** for logging or typed error handling — keep an explicit `try` / `catch` there.
 
 ```typescript
-import { tryCatchService } from "@/app/api/_shared/service/try-catch/try-catch.service";
+import { tryCatchService } from "@/app/api/_shared/services/try-catch/try-catch.service";
 
 const env = tryCatchService.runSync(() => readGoogleOauthEnv());
 if (env === null) {
