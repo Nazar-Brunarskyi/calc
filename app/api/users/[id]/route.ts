@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import mongoose from "mongoose";
 
 import { getUserModel } from "DB/schemas";
-import { createGlobalRouteHandler } from "@/src/global-route-handler.util";
+import { createGlobalRouteHandler } from "@/src/route-handlers/global-route-handler.util";
 
 interface IRouteContext {
   params: Promise<{ id: string }>;
