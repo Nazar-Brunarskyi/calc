@@ -1,0 +1,6 @@
+export enum SNACKBARS_ENUM {
+  WARNING = "WARNING",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  SUCCESS = "SUCCESS",
+}

@@ -1,7 +1,11 @@
-import { AppError } from "@/app/api/_shared/features/error-handling/instances/app-error";
 import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
+import { INTERNAL_SERVER_ERROR_CODE } from "@/src/features/error-handling/enums/error-codes";
 import { NextResponse } from "next/server";
+import { appErrorResponseService } from "../services/app-error-response.service";
+import { jsonErrorBody } from "../utils/json-error-body.util";
+
+const INTERNAL_SERVER_ERROR_MESSAGE = "Internal Server Error";
 
 export const withRouteErrorHandler: TRouteMiddleware<
   IRouteHandlerContext
@@ -9,16 +13,40 @@ export const withRouteErrorHandler: TRouteMiddleware<
   try {
     return await next();
   } catch (error) {
-    if (error instanceof AppError) {
-      console.error("AppError:", error.message, error.stack);
-    } else if (error instanceof Error) {
-      console.error("Route handler error:", error.message, error.stack);
-    } else {
-      console.error("Route handler error:", error);
+    const appFields = appErrorResponseService.getResponseFields(error);
+
+    if (appFields !== null) {
+      console.error("AppError:", appFields.message, error);
+
+      return NextResponse.json(
+        jsonErrorBody({
+          error: appFields.message,
+          error_code: appFields.error_code,
+          snackbar: appFields.snackbar,
+        }),
+        { status: appFields.statusCode },
+      );
     }
 
+    if (error instanceof Error) {
+      console.error("Error:", error.message, error.stack);
+
+      return NextResponse.json(
+        jsonErrorBody({
+          error: INTERNAL_SERVER_ERROR_MESSAGE,
+          error_code: INTERNAL_SERVER_ERROR_CODE,
+        }),
+        { status: 500 },
+      );
+    }
+
+    console.error("Internal Server Error:", error);
+
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      jsonErrorBody({
+        error: INTERNAL_SERVER_ERROR_MESSAGE,
+        error_code: INTERNAL_SERVER_ERROR_CODE,
+      }),
       { status: 500 },
     );
   }

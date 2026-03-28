@@ -1,18 +1,33 @@
+import type { APP_ERROR_CODES_TYPE } from "@/src/features/error-handling/enums/error-codes";
+import type { ISnackbarArgs } from "@/src/features/error-handling/interfaces/snackbar-args.interface";
+
 interface IAppErrorProps {
   message: string;
+  name?: string;
   statusCode?: number;
-  code?: string;
+  error_code?: APP_ERROR_CODES_TYPE;
+  snackbar?: ISnackbarArgs;
 }
 
 export class AppError extends Error {
+  readonly isAppError = true;
   readonly statusCode: number;
-  readonly code?: string;
+  readonly error_code?: APP_ERROR_CODES_TYPE;
+  readonly snackbar?: ISnackbarArgs;
 
-  constructor({ message, statusCode = 500, code }: IAppErrorProps) {
+  constructor({
+    message,
+    name,
+    statusCode = 500,
+    error_code,
+    snackbar,
+  }: IAppErrorProps) {
     super(message);
-    this.name = "AppError";
+    this.name = name ?? "app_error";
     this.statusCode = statusCode;
-    this.code = code;
+    this.error_code = error_code;
+    this.snackbar = snackbar;
+
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
