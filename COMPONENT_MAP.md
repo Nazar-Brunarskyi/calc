@@ -13,12 +13,12 @@ Reference for AI agents: **component name** → **path** from project root.
 | Component name | Path                                              |
 | -------------- | ------------------------------------------------- |
 | RootLayout       | app/layout.tsx                                                      |
-| WithAuthLayout   | app/(with-auth)/layout.tsx                                          |
 | RequireAuthGate  | src/features/auth/components/require-auth-gate.component.tsx        |
-| Home             | app/(with-auth)/page.tsx                                            |
+| withAuth         | src/features/auth/components/with-auth.hoc.tsx                      |
+| Home             | app/page.tsx                                                        |
 | LoginPage        | app/login/page.tsx                                                  |
-| ProfilePage      | app/(with-auth)/profile/page.tsx                                    |
-| ProfileView      | app/(with-auth)/profile/components/profile-view.component.tsx       |
+| ProfilePage      | app/profile/page.tsx                                                |
+| ProfileView      | app/profile/components/profile-view.component.tsx                 |
 | AuthProvider     | src/features/auth/providers/auth-provider.component.tsx             |
 
 ## Notes

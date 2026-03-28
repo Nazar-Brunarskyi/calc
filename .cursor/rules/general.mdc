@@ -5,7 +5,7 @@ alwaysApply: true
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **`AuthProvider`** and **`useAuth`** live under **`src/features/auth/providers/`**; **`RequireAuthGate`** lives under **`src/features/auth/components/`**. Folder placement and other layout rules are in that doc.
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **`AuthProvider`** and **`useAuth`** live under **`src/features/auth/providers/`**; **`RequireAuthGate`** and **`withAuth`** live under **`src/features/auth/components/`**. Folder placement and other layout rules are in that doc.
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 
