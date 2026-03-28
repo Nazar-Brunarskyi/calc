@@ -13,30 +13,6 @@ export default function Home() {
           priority
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <section>
-            <h2>Create user (test)</h2>
-            <form method="post" action="/api/users">
-              <p>
-                <label>
-                  Username{" "}
-                  <input
-                    type="text"
-                    name="username"
-                    required
-                    autoComplete="username"
-                  />
-                </label>
-              </p>
-              <p>
-                <button type="submit">Create</button>
-              </p>
-            </form>
-            <p>
-              <small>
-                POST /api/users — browser shows the JSON response after submit.
-              </small>
-            </p>
-          </section>
           <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
             To get started, edit the page.tsx file.
           </h1>

@@ -1,5 +1,5 @@
 ---
-description: General TypeScript standards — filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; check COMPONENT_MAP; see ARCHITECTURE
+description: General TypeScript standards — filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
 alwaysApply: true
 ---
 
@@ -8,6 +8,21 @@ alwaysApply: true
 For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). Folder placement and other layout rules are in that doc.
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
+
+**App Router API routes (`app/**/route.ts`):** Compose handlers with **`createRouteHandler`** from `@/lib/http/create-route-handler.util` and optional **`TRouteMiddleware`** (see [lib/http/README.md](../../lib/http/README.md)). For routes that always need MongoDB first, prefer **`createGlobalRouteHandler`** from `@/src/global-route-handler.util` (wraps `createRouteHandler` + `withMongoDbConnection`). Details and types live under `lib/http/`; placement rules for this stack are in [ARCHITECTURE.md](../../ARCHITECTURE.md) (HTTP route helpers).
+
+## Project Markdown files
+
+Every `*.md` in the repo (add new docs here when you add files):
+
+- **[README.md](../../README.md)** — Project overview, stack, dev server, and links into the other root docs.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `types`, `interfaces`, `constants`, `hooks`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
+- **[COMPONENT_MAP.md](../../COMPONENT_MAP.md)** — Catalog of UI components (name → path); check before new UI; update in the same change when the catalog changes.
+- **[db-schema.md](../../db-schema.md)** — MongoDB/Mongoose schema reference per entity, `ISchemaDefinition`, collections/models, and the `DB/*` import alias.
+- **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware order/short-circuit, shared route types, typing dynamic `params`.
+- **[lib/mongodb/README.md](../../lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, models, and using **`withMongoDbConnection`** with the HTTP helpers.
+- **[AGENTS.md](../../AGENTS.md)** — Next.js version note for agents: this tree may differ from public docs; read `node_modules/next/dist/docs/` and heed deprecations.
+- **[CLAUDE.md](../../CLAUDE.md)** — Entry that points tooling at **AGENTS.md** so the same agent rules apply.
 
 ## Module filename suffixes (kebab-case + role)
 
