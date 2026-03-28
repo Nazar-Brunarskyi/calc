@@ -144,14 +144,14 @@ Route handlers under `app/api/**/route.ts` should stay **thin**: compose HTTP (e
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app/api/_shared/repository/<entity>/`  | All **database access** for that entity used by API routes (e.g. `user.repository.ts`). Export a single **`userRepository`** (see below).                                                                                                                                                                       |
 | `app/api/_shared/services/<domain>/`    | **Cross-provider** or shared API logic. Examples: OAuth redirect helpers — **`authService`** in `services/auth/auth.service.ts`; **try/catch → `null`** helpers — **`tryCatchService`** in `services/try-catch/try-catch.service.ts` (`runSync` / `runAsync`) for flows that branch on failure without `let`. |
-| `app/api/auth/<provider>/service/`      | **Provider-specific** orchestration (e.g. Google callback in `google-oauth.service.ts`). Export **`googleOAuthService`**.                                                                                                                                                                                       |
+| `app/api/_shared/utils/`                | Small route-facing helpers (e.g. **`sendResponse`** in `send-response.util.ts`; **`redirectResponse`** in `redirect-response.util.ts` for redirects that set cookies).                                                                                                                                                                                                           |
+| `app/api/auth/<provider>/_service/`    | **Provider-specific** orchestration in an underscore-prefixed folder (avoids a routable `service` segment). Example: Google in `_service/google-oauth.service.ts`. Export **`googleOAuthService`**.                                                                                                                                                                              |
 
 **Export pattern — service/repository objects:** Do not export loose functions as the primary API. Export one **`camelCase` object** per module so call sites use a stable namespace:
 
 ```typescript
 // auth.service.ts
 export const authService = {
-  clearOAuthStateCookie,
   buildOauthRedirect,
 };
 

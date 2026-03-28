@@ -1,12 +1,10 @@
-import { randomBytes } from "crypto";
-import type { NextRequest } from "next/server";
-import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
-import { NextResponse } from "next/server";
-
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
 import { tryCatchService } from "@/app/api/_shared/services/try-catch/try-catch.service";
+import { redirectResponse } from "@/app/api/_shared/utils/redirect-response.util";
 import { readRequiredEnv } from "@/src/utils/read-required-env.util";
+import { randomBytes } from "crypto";
+import type { NextRequest, NextResponse } from "next/server";
 
 /** HttpOnly cookie holding the OAuth `state` CSRF value until callback. */
 const GOOGLE_OAUTH_STATE_COOKIE_NAME = "google_oauth_state";
@@ -28,6 +26,10 @@ interface IGoogleOauthEnv {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+}
+
+interface IGoogleOauthCallbackRedirectProps {
+  query: Record<string, string>;
 }
 
 interface IBuildGoogleAuthorizeUrlProps {
@@ -64,9 +66,6 @@ interface IFetchGoogleUserInfoProps {
   accessToken: string;
 }
 
-/**
- * PRIVATE
- */
 const readGoogleOauthEnv = (): IGoogleOauthEnv => ({
   clientId: readRequiredEnv("GOOGLE_CLIENT_ID"),
   clientSecret: readRequiredEnv("GOOGLE_CLIENT_SECRET"),
@@ -202,17 +201,7 @@ const fetchGoogleUserInfo = async ({
   return raw;
 };
 
-const createAuthorizeRedirectResponse = (): NextResponse => {
-  let env: IGoogleOauthEnv;
-  try {
-    env = readGoogleOauthEnv();
-  } catch {
-    return sendResponse(
-      { error: "Google OAuth is not configured" },
-      { status: 500 },
-    );
-  }
-
+const createAuthorizeGoogleRedirect = (env: IGoogleOauthEnv): NextResponse => {
   const state = randomBytes(32).toString("hex");
 
   const authorizeUrl = buildGoogleAuthorizeUrl({
@@ -221,17 +210,22 @@ const createAuthorizeRedirectResponse = (): NextResponse => {
     state,
   });
 
-  const response = NextResponse.redirect(authorizeUrl);
-
-  response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE_NAME, state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: GOOGLE_OAUTH_STATE_MAX_AGE_SECONDS,
-    path: "/",
+  return redirectResponse({
+    url: authorizeUrl,
+    cookies: [
+      {
+        name: GOOGLE_OAUTH_STATE_COOKIE_NAME,
+        value: state,
+        options: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: GOOGLE_OAUTH_STATE_MAX_AGE_SECONDS,
+          path: "/",
+        },
+      },
+    ],
   });
-
-  return response;
 };
 
 const handleGoogleOAuthCallback = async (
@@ -241,7 +235,7 @@ const handleGoogleOAuthCallback = async (
     process.env.OAUTH_SUCCESS_REDIRECT_PATH,
   );
 
-  const redirect = (query: Record<string, string>) =>
+  const redirect = ({ query }: IGoogleOauthCallbackRedirectProps) =>
     authService.buildOauthRedirect({
       request,
       path: successPath,
@@ -250,8 +244,9 @@ const handleGoogleOAuthCallback = async (
     });
 
   const env = tryCatchService.runSync(() => readGoogleOauthEnv());
+
   if (env === null) {
-    return redirect({ error: "oauth_not_configured" });
+    return redirect({ query: { error: "oauth_not_configured" } });
   }
 
   const code = request.nextUrl.searchParams.get("code");
@@ -268,7 +263,7 @@ const handleGoogleOAuthCallback = async (
     cookieState === undefined ||
     cookieState !== state
   ) {
-    return redirect({ error: "oauth_state_invalid" });
+    return redirect({ query: { error: "oauth_state_invalid" } });
   }
 
   const tokens = await tryCatchService.runAsync(() =>
@@ -280,7 +275,7 @@ const handleGoogleOAuthCallback = async (
     }),
   );
   if (tokens === null) {
-    return redirect({ error: "oauth_token_exchange" });
+    return redirect({ query: { error: "oauth_token_exchange" } });
   }
 
   const profile = await tryCatchService.runAsync(() =>
@@ -290,11 +285,11 @@ const handleGoogleOAuthCallback = async (
   );
 
   if (profile === null) {
-    return redirect({ error: "oauth_userinfo" });
+    return redirect({ query: { error: "oauth_userinfo" } });
   }
 
   if (profile.email === undefined || profile.email.trim() === "") {
-    return redirect({ error: "oauth_email_required" });
+    return redirect({ query: { error: "oauth_email_required" } });
   }
 
   try {
@@ -304,14 +299,15 @@ const handleGoogleOAuthCallback = async (
       name: profile.name,
     });
 
-    return redirect({ userId });
+    return redirect({ query: { userId } });
   } catch (error: unknown) {
     console.error(error);
-    return redirect({ error: "oauth_user_persist" });
+    return redirect({ query: { error: "oauth_user_persist" } });
   }
 };
 
 export const googleOAuthService = {
-  createAuthorizeRedirectResponse,
+  readGoogleOauthEnv,
+  createAuthorizeGoogleRedirect,
   handleGoogleOAuthCallback,
 };

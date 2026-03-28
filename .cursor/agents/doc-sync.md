@@ -1,14 +1,12 @@
 ---
-name: doc-sync
-description: >-
   Documentation and skills sync for this repo. Use when updating markdown after
   code changes, aligning ARCHITECTURE/README/COMPONENT_MAP with git diff, refreshing
   .cursor/skills SKILL.md tables and frontmatter, or registering new skills. Use
   proactively after substantive API, UI, or schema edits. Executes the
   sync-repository-docs project skill.
+name: doc-sync
 model: inherit
-readonly: false
-is_background: false
+description: >-
 ---
 
 # Doc-sync subagent

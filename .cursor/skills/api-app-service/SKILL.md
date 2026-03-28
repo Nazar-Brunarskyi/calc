@@ -2,10 +2,10 @@
 name: api-app-service
 description: >-
   Adds or changes App Router API services and repositories under app/api/_shared
-  and provider-specific app/api/**/service. Covers export object pattern (authService,
+  and provider-specific app/api/**/_service. Covers export object pattern (authService,
   tryCatchService, userRepository), thin route.ts handlers, and MongoDB via
   createGlobalRouteHandler. Use when implementing API auth flows, new OAuth providers,
-  user persistence from routes, or when the user mentions app/api/_shared, service
+  user persistence from routes, or when the user mentions app/api/_shared, _service
   folder, or repository folder for Next.js API routes.
 ---
 
@@ -31,7 +31,7 @@ Use this workflow when:
 
 | Doc / code                                                                                                                 | Why                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/services`, `auth/<provider>/service`. |
+| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/services`, `_shared/utils`, `auth/<provider>/_service`. |
 | [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc)                                                            | Arrow-only functions, `I*Props`, `no any`, service object exports.                 |
 | [lib/http/README.md](../../../lib/http/README.md)                                                                          | `createRouteHandler`, middleware `next()`.                                         |
 | [app/api/\_shared/route-handlers/global-route-handler.util.ts](../../../app/api/_shared/route-handlers/global-route-handler.util.ts) | Preset: composes `createRouteHandler` with **`withRouteErrorHandler`** + **`withMongoDbConnection`** for API routes that need the database. |
@@ -46,7 +46,8 @@ Use this workflow when:
 | [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | Example: `export const authService = { … }`.                                       |
 | [app/api/\_shared/services/try-catch/try-catch.service.ts](../../../app/api/_shared/services/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
 | [app/api/\_shared/repository/user/user.repository.ts](../../../app/api/_shared/repository/user/user.repository.ts)         | Example: `export const userRepository = { … }`.                                    |
-| [app/api/auth/google/service/google-oauth.service.ts](../../../app/api/auth/google/service/google-oauth.service.ts)        | Example: provider orchestration + `googleOAuthService`.                            |
+| [app/api/\_shared/utils/redirect-response.util.ts](../../../app/api/_shared/utils/redirect-response.util.ts)                 | **`redirectResponse`** — `NextResponse.redirect` plus optional cookie sets (used by `authService` and provider flows). |
+| [app/api/auth/google/\_service/google-oauth.service.ts](../../../app/api/auth/google/_service/google-oauth.service.ts)        | Example: provider orchestration + `googleOAuthService`.                            |
 
 ## Placement rules
 
@@ -58,9 +59,9 @@ Use this workflow when:
    - Logic **reused across providers** (redirect + cookie clearing, try/catch → `null` for uniform error branches).
    - Export: `export const authService = { … }`, `export const tryCatchService = { runSync, runAsync }`.
 
-3. **Provider service** — `app/api/auth/<provider>/service/<provider>-oauth.service.ts`
-   - **One provider’s** flow (env, tokens, profile, call repository + shared `authService`).
-   - Export: `export const googleOAuthService = { handleGoogleOAuthCallback }` (name reflects provider).
+3. **Provider service** — `app/api/auth/<provider>/_service/<provider>-oauth.service.ts` (underscore folder keeps the segment out of the URL path)
+   - **One provider’s** flow (env, tokens, profile, call repository + shared `authService` / `redirectResponse`).
+   - Export: `export const googleOAuthService = { readGoogleOauthEnv, createAuthorizeGoogleRedirect, handleGoogleOAuthCallback }` (adjust names per provider).
 
 4. **Route handler** — `app/api/**/route.ts`
    - Stay **thin**: `createRouteHandler` or `createGlobalRouteHandler`; call `<provider>Service.method(request)` or similar.
@@ -83,12 +84,12 @@ Use this workflow when:
 ```typescript
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
-import { googleOAuthService } from "@/app/api/auth/google/service/google-oauth.service";
+import { googleOAuthService } from "@/app/api/auth/google/_service/google-oauth.service";
 ```
 
 ## New OAuth provider (sketch)
 
-1. Implement Google OAuth in `app/api/auth/google/service/google-oauth.service.ts` (env, HTTP to Google, constants, `createAuthorizeRedirectResponse`, `handleGoogleOAuthCallback` on `googleOAuthService`).
+1. Implement Google OAuth in `app/api/auth/google/_service/google-oauth.service.ts` (env, HTTP to Google, constants, `readGoogleOauthEnv`, `createAuthorizeGoogleRedirect`, `handleGoogleOAuthCallback` on `googleOAuthService`). The start route may use `tryCatchService.runSync(() => googleOAuthService.readGoogleOauthEnv())` and return JSON **500** when env is missing, then call `createAuthorizeGoogleRedirect`.
 2. Add `app/api/auth/<provider>/callback/route.ts` (and start URL route if applicable) using `createGlobalRouteHandler` when MongoDB is required.
 3. Implement `<provider>OAuthService` that calls `authService.buildOauthRedirect` (or shared helpers) and `userRepository` / new repository methods.
 4. Extend **user** schema and repository only if new fields or lookup keys are required; see [db-schema.md](../../../db-schema.md).

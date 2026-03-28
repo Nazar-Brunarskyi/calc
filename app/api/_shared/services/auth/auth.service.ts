@@ -1,10 +1,5 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-
-export interface IClearOAuthStateCookieProps {
-  response: NextResponse;
-  stateCookieName: string;
-}
+import { redirectResponse } from "@/app/api/_shared/utils/redirect-response.util";
+import type { NextRequest, NextResponse } from "next/server";
 
 export interface IBuildOauthRedirectProps {
   request: NextRequest;
@@ -12,19 +7,6 @@ export interface IBuildOauthRedirectProps {
   query: Record<string, string>;
   stateCookieName: string;
 }
-
-const clearOAuthStateCookie = ({
-  response,
-  stateCookieName,
-}: IClearOAuthStateCookieProps): void => {
-  response.cookies.set(stateCookieName, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 0,
-    path: "/",
-  });
-};
 
 const buildOauthRedirect = ({
   request,
@@ -37,12 +19,25 @@ const buildOauthRedirect = ({
   for (const [key, value] of Object.entries(query)) {
     url.searchParams.set(key, value);
   }
-  const response = NextResponse.redirect(url);
-  clearOAuthStateCookie({ response, stateCookieName });
-  return response;
+
+  return redirectResponse({
+    url,
+    cookies: [
+      {
+        name: stateCookieName,
+        value: "",
+        options: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 0,
+          path: "/",
+        },
+      },
+    ],
+  });
 };
 
 export const authService = {
-  clearOAuthStateCookie,
   buildOauthRedirect,
 };
