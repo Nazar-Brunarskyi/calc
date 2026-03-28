@@ -29,8 +29,11 @@ export const normalizeRouteMiddleware = <
   return [middleware as TRouteMiddleware<TContext>];
 };
 
-export const createRouteHandler = <TContext extends IRouteHandlerContext>(
-  handler: TRouteHandler<TContext>,
+export const createRouteHandler = <
+  TContext extends IRouteHandlerContext,
+  TJsonBody = unknown,
+>(
+  handler: TRouteHandler<TContext, TJsonBody>,
   props: ICreateRouteHandlerProps<TContext>,
 ): TWrappedRouteHandler<TContext> => {
   const middlewareList = normalizeRouteMiddleware({

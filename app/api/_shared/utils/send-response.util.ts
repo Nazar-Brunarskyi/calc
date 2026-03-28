@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const sendResponse = <JsonBody>(
+export const sendResponse = <JsonBody extends Record<string, unknown>>(
   body: JsonBody,
   options?: ResponseInit,
 ): NextResponse<JsonBody> => {

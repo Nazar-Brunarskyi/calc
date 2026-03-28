@@ -15,11 +15,6 @@ export interface IFindUserByIdForApiProps {
   id: string;
 }
 
-export interface IUserPublicApiShape {
-  _id: string;
-  username: string;
-}
-
 interface IDeriveBaseGoogleUsernameProps {
   email: string;
   name?: string;
@@ -114,7 +109,10 @@ const findOrCreateGoogleUser = async ({
 
 const findUserByIdForApi = async ({
   id,
-}: IFindUserByIdForApiProps): Promise<IUserPublicApiShape | null> => {
+}: IFindUserByIdForApiProps): Promise<{
+  _id: string;
+  username: string;
+} | null> => {
   const User = getUserModel(mongoose);
   const doc = await User.findById(id).lean();
   if (doc === null) {
