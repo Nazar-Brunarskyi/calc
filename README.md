@@ -6,6 +6,7 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 - **[COMPONENT_MAP.md](./COMPONENT_MAP.md)** — Catalog of UI building blocks; check before adding new components.
 - **[lib/http/README.md](./lib/http/README.md)** — `createRouteHandler`, middleware `next()` chain, typing dynamic `params`.
 - **[lib/mongodb/README.md](./lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, Mongoose models; **`withMongoDbConnection`** for routes lives under **`app/api/_shared/route-handlers/`** (see [lib/http/README.md](./lib/http/README.md)).
+- **Cursor Agent** — [`.cursor/rules/`](./.cursor/rules/) (project rules), [`.cursor/agents/`](./.cursor/agents/) (subagents; e.g. **`/doc-sync`** — see [`.cursor/agents/README.md`](./.cursor/agents/README.md)), and [`.cursor/skills/`](./.cursor/skills/) (e.g. **api-app-service**, **`/sync-repository-docs`** for doc sync without a subagent). Details in [ARCHITECTURE.md](./ARCHITECTURE.md) (Cursor Agent bullet in the App Router API section).
 
 ## API routes
 

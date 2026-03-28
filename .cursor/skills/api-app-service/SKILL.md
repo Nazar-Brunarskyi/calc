@@ -37,6 +37,8 @@ Use this workflow when:
 | [app/api/\_shared/route-handlers/global-route-handler.util.ts](../../../app/api/_shared/route-handlers/global-route-handler.util.ts) | Preset: composes `createRouteHandler` with **`withRouteErrorHandler`** + **`withMongoDbConnection`** for API routes that need the database. |
 | [app/api/\_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util.ts](../../../app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util.ts) | App-level outermost error middleware: structured JSON via **`jsonErrorBody`** (`error`, optional `error_code`, optional `snackbar`); used by `createGlobalRouteHandler` and optional on manual `createRouteHandler` chains. |
 | [app/api/\_shared/features/error-handling/instances/app-error.ts](../../../app/api/_shared/features/error-handling/instances/app-error.ts) | **`AppError`** — typed errors (`statusCode`, optional `error_code`, optional `snackbar`, `isAppError`); **`appErrorResponseService`** maps throws to response fields for `withRouteErrorHandler`. |
+| [app/api/\_shared/features/error-handling/instances/bad-request-error.ts](../../../app/api/_shared/features/error-handling/instances/bad-request-error.ts) | **`BadRequestError`** — extends **`AppError`** with **`statusCode` 400**; optional `message` (default **`"Bad request"`**), optional **`snackbar`**. |
+| [app/api/\_shared/features/error-handling/instances/not-found-error.ts](../../../app/api/_shared/features/error-handling/instances/not-found-error.ts) | **`NotFoundError`** — extends **`AppError`** with **`statusCode` 404**; optional `message` (default **`"Not found"`**), optional **`snackbar`**. |
 | [app/api/\_shared/features/error-handling/services/app-error-response.service.ts](../../../app/api/_shared/features/error-handling/services/app-error-response.service.ts) | **`appErrorResponseService.getResponseFields`** — normalizes **`AppError`** or app-error-shaped plain objects for the error middleware. |
 | [app/api/\_shared/features/error-handling/utils/json-error-body.util.ts](../../../app/api/_shared/features/error-handling/utils/json-error-body.util.ts) | **`jsonErrorBody`** — builds the JSON object returned to clients on API errors. |
 | [src/features/error-handling/enums/error-codes/index.ts](../../../src/features/error-handling/enums/error-codes/index.ts) | **`INTERNAL_SERVER_ERROR_CODE`**, **`APP_ERROR_CODES_TYPE`** — extend the type union when adding new error-code enums. |
@@ -74,6 +76,7 @@ Use this workflow when:
 - [ ] **Imports** use `@/app/api/...` paths.
 - [ ] **Types**: keep `interface` in the same file until shared app-wide; then `src/interfaces` per ARCHITECTURE.
 - [ ] **Update** [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5 if you introduce a **new top-level pattern** or folder.
+- [ ] **Error classes:** If you add **`AppError`** subclasses under **`instances/`**, update [ARCHITECTURE.md](../../../ARCHITECTURE.md) §4 (HTTP route helpers), this skill’s canonical table, and [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc) if the intentional-throw guidance should mention them.
 
 ## Example import shapes
 
