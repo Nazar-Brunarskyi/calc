@@ -4,7 +4,7 @@ This document describes how the **calc** frontend is organized. The stack is **N
 
 ## Component map
 
-The repo keeps a **catalog of UI building blocks** in [COMPONENT_MAP.md](./COMPONENT_MAP.md) at the project root: component names and file paths for App Router entries, colocated route components, `components/ui/` (shadcn), and `src/components/`.
+The repo keeps a **catalog of UI building blocks** in [COMPONENT_MAP.md](./COMPONENT_MAP.md) at the project root: component names and file paths for App Router entries, colocated route components, `components/ui/` (shadcn), `src/components/`, and feature UI such as `src/features/auth/components/` and `src/features/auth/providers/`.
 
 - **Before adding UI:** Check that file to see whether a suitable component already exists and can be **reused or extended** instead of duplicating.
 - **When you add, rename, move, or remove** a registered component, **update `COMPONENT_MAP.md` in the same change** so it stays the source of truth.
@@ -80,6 +80,13 @@ Code that is **reused across the app** but is not a React component belongs unde
 | `src/hooks`      | Shared **React hooks** (`use*` modules) used from more than one route or feature.                                                                             |
 | `src/utils`      | Shared **non-hook** helpers (pure utilities, env readers, small parsers) used from more than one place. Prefer **kebab-case** and a **`.util.ts`** suffix (see [.cursor/rules/general.mdc](./.cursor/rules/general.mdc)). |
 
+**`src/features/<feature>/`:** Optional **vertical slices** for app-wide code that belongs to a named product concern (not generic `src/components` / `src/utils`). Keep each feature self-contained under its folder. Use a **`providers/`** subfolder for **React context providers** (and their hooks when exported from the same module); use **`components/`** for other feature UI (gates, panels, etc.).
+
+| Path                         | Purpose |
+| ---------------------------- | ------- |
+| `src/features/error-handling/` | Shared API error **enums**, **`ISnackbarArgs`**, and **`APP_ERROR_CODES_TYPE`** used with **`AppError`** / route error middleware (see §4). |
+| `src/features/auth/`         | **`AuthProvider`** and **`useAuth`** in **`providers/auth-provider.component.tsx`**; **`RequireAuthGate`** in **`components/require-auth-gate.component.tsx`**. The root **`app/layout.tsx`** wraps the tree with **`AuthProvider`** (passing server-resolved `initialUser`). Protected routes live under the **`app/(with-auth)/`** route group; that segment’s **`layout.tsx`** runs a server session check and wraps **`RequireAuthGate`** around **`children`**. Import providers from **`@/src/features/auth/providers/...`** and gates or other feature UI from **`@/src/features/auth/components/...`**. |
+
 If a single concern needs both a `type` and an `interface`, use two files (one under `src/types`, one under `src/interfaces`) or split by the primary export so each file’s main exports match that folder’s rule.
 
 **File naming (types, interfaces, hooks, and utilities):** Use **kebab-case** plus a **dot-suffix** before the extension that states the module’s role — e.g. `name-name.type.ts`, `name-name.interface.ts`, `name-name.hook.ts`, `name-name.util.ts`, and **`name-name.component.tsx`** for shared React components (see [.cursor/rules/general.mdc](./.cursor/rules/general.mdc)). Colocated route-only modules follow the same idea. Exported symbols stay in normal TypeScript/React style (e.g. `IUserProfile`, `useMediaQuery`).
@@ -89,6 +96,7 @@ If a single concern needs both a `type` and an `interface`, use two files (one u
 ```text
 src/
   components/     # shared UI (see §2)
+  features/       # optional vertical slices: error-handling/, auth/, …
   types/
     result.type.ts       # e.g. type Result<T> = ...
   interfaces/
@@ -113,7 +121,7 @@ import { readRequiredEnv } from "@/src/utils/read-required-env.util";
 
 ### Path aliases
 
-This project keeps the App Router at the project root (`app/`) and uses **`@/*` → `./*`** in `tsconfig.json`. Shared code under `src/` is imported with the `src/` segment in the path, for example `@/src/components/...`, `@/src/types/...`, `@/src/interfaces/...`, `@/src/constants/...`, `@/src/hooks/...`, and `@/src/utils/...`. **`DB/*` → `./lib/mongodb/*`** is also configured for Mongoose schemas, models, and DB helpers without a deep `lib/mongodb` path at every call site (see [db-schema.md](./db-schema.md) and [lib/mongodb/README.md](./lib/mongodb/README.md)). If you later move `app/` under `src/` (full `src/` layout), update `paths` so `@/*` still resolves correctly.
+This project keeps the App Router at the project root (`app/`) and uses **`@/*` → `./*`** in `tsconfig.json`. Shared code under `src/` is imported with the `src/` segment in the path, for example `@/src/components/...`, `@/src/features/...`, `@/src/types/...`, `@/src/interfaces/...`, `@/src/constants/...`, `@/src/hooks/...`, and `@/src/utils/...`. **`DB/*` → `./lib/mongodb/*`** is also configured for Mongoose schemas, models, and DB helpers without a deep `lib/mongodb` path at every call site (see [db-schema.md](./db-schema.md) and [lib/mongodb/README.md](./lib/mongodb/README.md)). If you later move `app/` under `src/` (full `src/` layout), update `paths` so `@/*` still resolves correctly.
 
 ### Library docs
 
@@ -174,7 +182,7 @@ Implementation details (arrow functions, `I*Props`, no `any`) follow [.cursor/ru
 ## Rule of thumb
 
 - **Used once?** Keep it next to the page: `app/<route>/components/` (and colocate local types, interfaces, constants, or hooks there if they are not shared).
-- **Used more than once?** Move UI to `src/components`; shared **`type`**-based definitions to `src/types`; shared **`interface`** declarations to `src/interfaces`; shared constants to `src/constants`; shared hooks to `src/hooks`; shared non-hook helpers to `src/utils`.
+- **Used more than once?** Move UI to `src/components` (or under **`src/features/<feature>/components/`** when it belongs to a named vertical — see **`src/features`** above); put **React context providers** for that feature under **`src/features/<feature>/providers/`** (see **`src/features/auth/providers/`**); shared **`type`**-based definitions to `src/types`; shared **`interface`** declarations to `src/interfaces`; shared constants to `src/constants`; shared hooks to `src/hooks`; shared non-hook helpers to `src/utils`.
 
 ## Possible extensions
 

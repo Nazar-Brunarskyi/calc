@@ -98,13 +98,13 @@ export const GET = createGlobalRouteHandler<IRouteContext>(
       return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
     }
 
-    const user = await userRepository.findUserByIdForApi({ id });
-    if (user === null) {
+    const me = await userRepository.getMe({ id });
+    if (me === null) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json({
-      user: { _id: user._id, username: user.username },
+      user: { _id: id, username: me.username },
     });
   },
 );

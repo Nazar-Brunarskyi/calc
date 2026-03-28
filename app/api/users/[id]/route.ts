@@ -3,14 +3,12 @@ import { NotFoundError } from "@/app/api/_shared/features/error-handling/instanc
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import { IUserMe } from "@/src/interfaces/user-me.interface";
 import mongoose from "mongoose";
 import { NextRequest } from "next/server";
 
 type IGetUserSuccessBody = {
-  user: {
-    _id: string;
-    username: string;
-  };
+  user: IUserMe;
 };
 
 interface IRouteContext {
@@ -25,7 +23,7 @@ export const GET = createGlobalRouteHandler<IRouteContext>(
       throw new BadRequestError({ message: "Invalid user id" });
     }
 
-    const user = await userRepository.findUserByIdForApi({ id });
+    const user = await userRepository.getMe({ id });
 
     if (user === null) {
       throw new NotFoundError({ message: "User not found" });
@@ -33,7 +31,6 @@ export const GET = createGlobalRouteHandler<IRouteContext>(
 
     return sendResponse<IGetUserSuccessBody>({
       user: {
-        _id: user._id,
         username: user.username,
       },
     });

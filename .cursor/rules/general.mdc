@@ -5,7 +5,7 @@ alwaysApply: true
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). Folder placement and other layout rules are in that doc.
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **`AuthProvider`** and **`useAuth`** live under **`src/features/auth/providers/`**; **`RequireAuthGate`** lives under **`src/features/auth/components/`**. Folder placement and other layout rules are in that doc.
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 
@@ -16,7 +16,7 @@ For reusable libraries under `lib/`, prefer a local `README.md` when usage is no
 Every `*.md` in the repo (add new docs here when you add files):
 
 - **[README.md](../../README.md)** — Project overview, stack, dev server, and links into the other root docs.
-- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `types`, `interfaces`, `constants`, `hooks`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `constants`, `hooks`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
 - **[COMPONENT_MAP.md](../../COMPONENT_MAP.md)** — Catalog of UI components (name → path); check before new UI; update in the same change when the catalog changes.
 - **[db-schema.md](../../db-schema.md)** — MongoDB/Mongoose schema reference per entity, `ISchemaDefinition`, collections/models, and the `DB/*` import alias.
 - **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware **`next()`** / order / short-circuit, shared route types, typing dynamic `params`.

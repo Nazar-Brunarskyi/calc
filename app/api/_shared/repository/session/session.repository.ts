@@ -11,6 +11,28 @@ export interface ICreateSessionForUserProps {
   userId: string;
 }
 
+export interface IFindSessionUserIdBySessionIdProps {
+  sessionId: string;
+}
+
+const findSessionUserIdBySessionId = async ({
+  sessionId,
+}: IFindSessionUserIdBySessionIdProps): Promise<{ userId: string } | null> => {
+  const Session = getSessionModel(mongoose);
+  const session = await Session.findOne({
+    sessionId,
+    expiresAt: { $gt: new Date() },
+  }).lean();
+
+  if (session === null) {
+    return null;
+  }
+
+  return {
+    userId: String(session.user),
+  };
+};
+
 const createSessionForUser = async ({
   userId,
 }: ICreateSessionForUserProps): Promise<{ sessionId: string }> => {
@@ -31,4 +53,5 @@ const createSessionForUser = async ({
 
 export const sessionRepository = {
   createSessionForUser,
+  findSessionUserIdBySessionId,
 };

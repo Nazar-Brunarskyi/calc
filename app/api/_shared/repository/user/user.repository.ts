@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import type { Model } from "mongoose";
 import mongoose from "mongoose";
 
+import type { IUserMe } from "@/src/interfaces/user-me.interface";
 import { getUserModel } from "DB/schemas";
 import type { IUserSchema } from "DB/schemas/user";
 
@@ -11,7 +12,7 @@ export interface IFindOrCreateGoogleUserProps {
   name?: string;
 }
 
-export interface IFindUserByIdForApiProps {
+export interface IGetMeProps {
   id: string;
 }
 
@@ -107,24 +108,20 @@ const findOrCreateGoogleUser = async ({
   }
 };
 
-const findUserByIdForApi = async ({
-  id,
-}: IFindUserByIdForApiProps): Promise<{
-  _id: string;
-  username: string;
-} | null> => {
+const getMe = async ({ id }: IGetMeProps): Promise<IUserMe | null> => {
   const User = getUserModel(mongoose);
   const doc = await User.findById(id).lean();
+
   if (doc === null) {
     return null;
   }
+
   return {
-    _id: String(doc._id),
     username: doc.username,
   };
 };
 
 export const userRepository = {
   findOrCreateGoogleUser,
-  findUserByIdForApi,
+  getMe,
 };
