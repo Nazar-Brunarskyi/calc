@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import type { NextRequest } from "next/server";
+import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
 import { NextResponse } from "next/server";
 
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
@@ -206,7 +207,7 @@ const createAuthorizeRedirectResponse = (): NextResponse => {
   try {
     env = readGoogleOauthEnv();
   } catch {
-    return NextResponse.json(
+    return sendResponse(
       { error: "Google OAuth is not configured" },
       { status: 500 },
     );

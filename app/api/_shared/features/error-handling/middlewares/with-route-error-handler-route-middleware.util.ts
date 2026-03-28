@@ -1,7 +1,7 @@
+import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
 import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
 import { INTERNAL_SERVER_ERROR_CODE } from "@/src/features/error-handling/enums/error-codes";
-import { NextResponse } from "next/server";
 import { appErrorResponseService } from "../services/app-error-response.service";
 import { jsonErrorBody } from "../utils/json-error-body.util";
 
@@ -18,7 +18,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
     if (appFields !== null) {
       console.error("AppError:", appFields.message, error);
 
-      return NextResponse.json(
+      return sendResponse(
         jsonErrorBody({
           error: appFields.message,
           error_code: appFields.error_code,
@@ -31,7 +31,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
     if (error instanceof Error) {
       console.error("Error:", error.message, error.stack);
 
-      return NextResponse.json(
+      return sendResponse(
         jsonErrorBody({
           error: INTERNAL_SERVER_ERROR_MESSAGE,
           error_code: INTERNAL_SERVER_ERROR_CODE,
@@ -42,7 +42,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
 
     console.error("Internal Server Error:", error);
 
-    return NextResponse.json(
+    return sendResponse(
       jsonErrorBody({
         error: INTERNAL_SERVER_ERROR_MESSAGE,
         error_code: INTERNAL_SERVER_ERROR_CODE,
