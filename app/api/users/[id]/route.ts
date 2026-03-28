@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
-import { createGlobalRouteHandler } from "@/src/route-handlers/global-route-handler.util";
+import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
 
 interface IRouteContext {
   params: Promise<{ id: string }>;

@@ -99,8 +99,6 @@ src/
     use-media-query.hook.ts
   utils/
     read-required-env.util.ts
-  route-handlers/
-    global-route-handler.util.ts  # createGlobalRouteHandler preset (see §4)
 ```
 
 **Usage:**
@@ -125,11 +123,12 @@ When a reusable library under `lib/` has non-obvious usage, keep a local `README
 
 App Router **Route Handlers** (`app/**/route.ts`) can share a small composition layer under **`lib/http/`**:
 
-- **`createRouteHandler`** (`create-route-handler.util.ts`) wraps a handler with optional **middleware** (one function or an array). If a middleware returns a `Response` / `NextResponse`, that response is sent and the inner handler does not run; returning nothing continues the chain.
-- Shared types: `IRouteHandlerContext` in `route-handler-context.interface.ts`; `TRouteMiddleware` in `route-middleware.type.ts`; `TRouteHandler` and `TRouteHandlerReturn` in `route-handler.type.ts`; `TWrappedRouteHandler` in `wrapped-route-handler.type.ts`. The base App Router `context` shape is **`IRouteHandlerContext`**. Use a **generic** on `createRouteHandler` (or a local `interface` for `context`) when the route has **dynamic segments** so `params` is typed correctly.
-- **`withMongoDbConnection`** in `lib/mongodb/with-mongodb-connection-route-middleware.util.ts` is route middleware that calls `connectMongoDb()` before the handler. Pair it with `createRouteHandler`, or use the app preset below.
+- **`createRouteHandler`** (`create-route-handler.util.ts`) wraps a handler with optional **middleware** (one function or an array). Middleware uses an Express-style **`next`**: each function receives `(request, context, next)` and **`await next()`** runs the rest of the chain, including the route handler. Return a `Response` / `NextResponse` **without** calling `next` to short-circuit (handler never runs).
+- Shared types: `IRouteHandlerContext` in `route-handler-context.interface.ts`; `TRouteMiddleware` and `TRouteNext` in `route-middleware.type.ts`; `TRouteHandler` and `TRouteHandlerReturn` in `route-handler.type.ts`; `TWrappedRouteHandler` in `wrapped-route-handler.type.ts`. The base App Router `context` shape is **`IRouteHandlerContext`**. Use a **generic** on `createRouteHandler` (or a local `interface` for `context`) when the route has **dynamic segments** so `params` is typed correctly.
+- **`withMongoDbConnection`** in `app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts` is app-level route middleware that **`await`s `connectMongoDb()`** from `lib/mongodb/` then **`return next()`** so the handler runs with a live connection. Pair it with `createRouteHandler`, or use the app preset below.
+- **`withRouteErrorHandler`** in `app/api/_shared/route-handlers/with-route-error-handler-route-middleware.util.ts` is app-level middleware for consistent JSON error responses on failures (used as the outermost layer in the preset below).
 
-When **most API routes** should open MongoDB the same way, this repo also exposes **`createGlobalRouteHandler`** in `src/route-handlers/global-route-handler.util.ts` (import from **`@/src/route-handlers/global-route-handler.util`**): it is `createRouteHandler` with `withMongoDbConnection` always first, plus optional extra middleware (e.g. auth) merged after.
+When **most API routes** should open MongoDB the same way, this repo exposes **`createGlobalRouteHandler`** in **`app/api/_shared/route-handlers/global-route-handler.util.ts`** (import **`@/app/api/_shared/route-handlers/global-route-handler.util`**): it is `createRouteHandler` with **`withRouteErrorHandler`** (outermost) and **`withMongoDbConnection`** always applied, plus optional extra middleware (e.g. auth) merged after the DB middleware.
 
 Full usage and examples: [lib/http/README.md](./lib/http/README.md). MongoDB env and models: [lib/mongodb/README.md](./lib/mongodb/README.md).
 

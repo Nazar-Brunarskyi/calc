@@ -47,9 +47,9 @@ More detail and examples: `lib/mongodb/README.md`.
 
 ### App Router API routes: `createGlobalRouteHandler`
 
-For `app/**/route.ts` handlers that always need MongoDB, use **`createGlobalRouteHandler`** from `src/route-handlers/global-route-handler.util.ts`.
+For `app/**/route.ts` handlers that always need MongoDB, use **`createGlobalRouteHandler`** from `app/api/_shared/route-handlers/global-route-handler.util.ts`.
 
-It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) and prepends route middleware **`withMongoDbConnection`** from `lib/mongodb/with-mongodb-connection-route-middleware.util.ts`. That middleware **`await`s `connectMongoDb()`** before your handler runs; `connectMongoDb` caches the connection globally, so repeated requests reuse the same Mongoose connection. Any extra middleware you pass in `props.middleware` runs **after** the DB is ready.
+It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) with an Express-style **`next`** chain: outermost **`withRouteErrorHandler`** (see `app/api/_shared/route-handlers/with-route-error-handler-route-middleware.util.ts`), then **`withMongoDbConnection`** from `app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts`. That Mongo middleware **`await`s `connectMongoDb()`** and **`return next()`** so your handler runs after the connection is ready; `connectMongoDb` caches the connection globally, so repeated requests reuse the same Mongoose connection. Any extra middleware you pass in `props.middleware` runs **after** the DB middleware.
 
 You do **not** need to call `connectMongoDb()` again inside the handler unless you have a code path that bypasses this wrapper. Use the default **`mongoose`** import with **`getUserModel(mongoose)`** (or other model getters) as usual.
 
@@ -61,7 +61,7 @@ import type { NextRequest } from "next/server";
 import mongoose from "mongoose";
 
 import { getUserModel } from "DB/schemas";
-import { createGlobalRouteHandler } from "@/src/route-handlers/global-route-handler.util";
+import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
 
 interface IRouteContext {
   params: Promise<{ id: string }>;

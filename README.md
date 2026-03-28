@@ -4,12 +4,12 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Where to put pages, shared `src/` code (`components`, `types`, `interfaces`, `constants`, `hooks`), path aliases, and **`lib/http`** route composition.
 - **[COMPONENT_MAP.md](./COMPONENT_MAP.md)** — Catalog of UI building blocks; check before adding new components.
-- **[lib/http/README.md](./lib/http/README.md)** — `createRouteHandler`, middleware chain, typing dynamic `params`.
-- **[lib/mongodb/README.md](./lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, Mongoose models, **`withMongoDbConnection`** middleware used with the HTTP helpers.
+- **[lib/http/README.md](./lib/http/README.md)** — `createRouteHandler`, middleware `next()` chain, typing dynamic `params`.
+- **[lib/mongodb/README.md](./lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, Mongoose models; **`withMongoDbConnection`** for routes lives under **`app/api/_shared/route-handlers/`** (see [lib/http/README.md](./lib/http/README.md)).
 
 ## API routes
 
-Example: **`GET /api/users/[id]`** loads a user by id (MongoDB). Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/src/global-route-handler.util` so MongoDB is connected before the handler runs (see `app/api/users/[id]/route.ts`).
+Example: **`GET /api/users/[id]`** loads a user by id (MongoDB). Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util` so MongoDB is connected before the handler runs (see `app/api/users/[id]/route.ts`).
 
 ## Getting Started
 
