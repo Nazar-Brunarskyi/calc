@@ -21,8 +21,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "DB/*": ["./lib/mongodb/*"],
-      "mongoose": ["./node_modules/mongoose/types/index.d.ts"]
+      "DB/*": ["./lib/mongodb/*"]
     }
   },
   "include": [
