@@ -85,10 +85,10 @@ const readGoogleOauthEnv = (): IGoogleOauthEnv => ({
 const resolveOauthSuccessRedirectPath = (
   envSuccessRedirectPath: string | undefined,
 ): string => {
-  const trimmed = (envSuccessRedirectPath ?? "/").trim() || "/";
+  const trimmed = (envSuccessRedirectPath ?? "/profile").trim() || "/profile";
 
   if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
-    return "/";
+    return "/profile";
   }
   return trimmed;
 };
@@ -318,7 +318,7 @@ const handleGoogleOAuthCallback = async (
     }
 
     return redirect({
-      query: { userId },
+      query: {},
       extraCookies: [
         {
           name: SESSION_ID_COOKIE_NAME,

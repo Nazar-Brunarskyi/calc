@@ -1,7 +1,10 @@
-import { withAuth } from "@/src/features/auth/components/with-auth.hoc";
+import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
+import { redirect } from "next/navigation";
 
-const Page = async () => {
-  return null;
-};
-
-export default withAuth(Page);
+export default async function Page() {
+  const user = await getCurrentUserForPage();
+  if (user === null) {
+    redirect("/login");
+  }
+  redirect("/profile");
+}
