@@ -32,9 +32,7 @@ const isSnackbarArgsLike = (value: unknown): value is ISnackbarArgs => {
   );
 };
 
-const getResponseFields = (
-  error: unknown,
-): IAppErrorResponseFields | null => {
+const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
   if (error instanceof AppError) {
     return {
       message: error.message,
