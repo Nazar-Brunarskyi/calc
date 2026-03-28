@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import mongoose from "mongoose";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-import { getUserModel } from "DB/schemas";
+import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { createGlobalRouteHandler } from "@/src/route-handlers/global-route-handler.util";
 
 interface IRouteContext {
@@ -18,23 +18,25 @@ export const GET = createGlobalRouteHandler<IRouteContext>(
     }
 
     try {
-      const User = getUserModel(mongoose);
-      const doc = await User.findById(id).lean();
-      if (!doc) {
+      const user = await userRepository.findUserByIdForApi({ id });
+
+      if (user === null) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
+
       return NextResponse.json({
         user: {
-          _id: String(doc._id),
-          username: doc.username,
+          _id: user._id,
+          username: user.username,
         },
       });
     } catch (error: unknown) {
       console.error(error);
+
       return NextResponse.json(
         { error: "Failed to fetch user" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-  }
+  },
 );

@@ -73,12 +73,12 @@ Code that is **reused across the app** but is not a React component belongs unde
 
 **Types vs interfaces:** These are **two separate folders**. Do not mix the concerns in one folder.
 
-| Folder | Purpose |
-|--------|---------|
-| `src/types` | Shared definitions made with the **`type`** keyword: aliases, unions, intersections, mapped/conditional utility types, and other type-level-only constructs. |
-| `src/interfaces` | Shared declarations using the **`interface`** keyword: object shapes, contracts, and extendable API/domain shapes. |
-| `src/constants` | Shared **constants** (config keys, limits, labels used in multiple places, enum-like values). Avoid dumping unrelated literals in one file as the tree grows. |
-| `src/hooks` | Shared **React hooks** (`use*` modules) used from more than one route or feature. |
+| Folder           | Purpose                                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types`      | Shared definitions made with the **`type`** keyword: aliases, unions, intersections, mapped/conditional utility types, and other type-level-only constructs.  |
+| `src/interfaces` | Shared declarations using the **`interface`** keyword: object shapes, contracts, and extendable API/domain shapes.                                            |
+| `src/constants`  | Shared **constants** (config keys, limits, labels used in multiple places, enum-like values). Avoid dumping unrelated literals in one file as the tree grows. |
+| `src/hooks`      | Shared **React hooks** (`use*` modules) used from more than one route or feature.                                                                             |
 
 If a single concern needs both a `type` and an `interface`, use two files (one under `src/types`, one under `src/interfaces`) or split by the primary export so each file’s main exports match that folder’s rule.
 
@@ -127,6 +127,41 @@ App Router **Route Handlers** (`app/**/route.ts`) can share a small composition 
 When **most API routes** should open MongoDB the same way, this repo also exposes **`createGlobalRouteHandler`** in `src/global-route-handler.util.ts`: it is `createRouteHandler` with `withMongoDbConnection` always first, plus optional extra middleware (e.g. auth) merged after.
 
 Full usage and examples: [lib/http/README.md](./lib/http/README.md). MongoDB env and models: [lib/mongodb/README.md](./lib/mongodb/README.md).
+
+### 5. App Router API — shared repositories and services (`app/api`)
+
+Route handlers under `app/api/**/route.ts` should stay **thin**: compose HTTP (e.g. `createRouteHandler` / `createGlobalRouteHandler`) and delegate to **services** and **repositories**.
+
+| Location                               | Role                                                                                                                                                                                                                                                                                                        |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/api/_shared/repository/<entity>/` | All **database access** for that entity used by API routes (e.g. `user.repository.ts`). Export a single **`userRepository`** (see below).                                                                                                                                                                   |
+| `app/api/_shared/service/<domain>/`    | **Cross-provider** or shared API logic. Examples: OAuth redirect helpers — **`authService`** in `service/auth/auth.service.ts`; **try/catch → `null`** helpers — **`tryCatchService`** in `service/try-catch/try-catch.service.ts` (`runSync` / `runAsync`) for flows that branch on failure without `let`. |
+| `app/api/auth/<provider>/service/`     | **Provider-specific** orchestration (e.g. Google callback in `google-oauth.service.ts`). Export **`googleOAuthService`**.                                                                                                                                                                                   |
+
+**Export pattern — service/repository objects:** Do not export loose functions as the primary API. Export one **`camelCase` object** per module so call sites use a stable namespace:
+
+```typescript
+// auth.service.ts
+export const authService = {
+  clearOAuthStateCookie,
+  buildOauthRedirect,
+};
+
+// Consumer
+import { authService } from "@/app/api/_shared/service/auth/auth.service";
+
+authService.buildOauthRedirect({ ... });
+```
+
+Use the same idea for repositories: `export const userRepository = { findUserByIdForApi, ... }` and import `{ userRepository }`.
+
+**`tryCatchService`:** Use when a service needs **const-friendly** error handling: `tryCatchService.runSync(() => …)` returns `T | null`; `await tryCatchService.runAsync(() => …)` returns `Promise<T | null>`. Swallows any thrown value (same as an empty `catch`). For logging, side effects on failure, or discriminated errors, use an explicit `try` / `catch` instead.
+
+**`/** PRIVATE _/`:** In `app/api/**` service and repository modules, **private** means a module-level `const` that is **not** a property on the single exported object (`userRepository`, `authService`, etc.). Put **`/\*\* PRIVATE _/`** only above those. **Do not** add descriptive `/** … \*/` blocks on helpers that **are\*\* exported via that object. Details: [.cursor/rules/general.mdc](./.cursor/rules/general.mdc) (App Router API — service and repository exports).
+
+Implementation details (arrow functions, `I*Props`, no `any`) follow [.cursor/rules/general.mdc](./.cursor/rules/general.mdc).
+
+**Agent Skills (Cursor):** Optional workflows live under [`.cursor/skills/`](./.cursor/skills/) — each skill is a folder with a **`SKILL.md`** (YAML frontmatter + instructions). Cursor loads them when the task matches the skill **description**. To add or refine API services/repositories in this repo, follow [api-app-service — App Router API service/repository](.cursor/skills/api-app-service/SKILL.md). For authoring _any_ new Cursor skill (structure, description rules, storage paths), open the user skill **create-skill** at `~/.cursor/skills-cursor/create-skill/SKILL.md` in your environment (bundled with Cursor; do not commit that copy into this repo).
 
 ## Rule of thumb
 

@@ -10,10 +10,10 @@ Reference for AI agents: **component name** → **path** from project root.
 
 ## Components
 
-| Component name | Path |
-| -------------- | ---- |
-| RootLayout | app/layout.tsx |
-| Home | app/page.tsx |
+| Component name | Path           |
+| -------------- | -------------- |
+| RootLayout     | app/layout.tsx |
+| Home           | app/page.tsx   |
 
 ## Notes
 

@@ -9,10 +9,10 @@ import type { TWrappedRouteHandler } from "@/lib/http/wrapped-route-handler.type
 import { withMongoDbConnection } from "@/lib/mongodb/with-mongodb-connection-route-middleware.util";
 
 export function createGlobalRouteHandler<
-  TContext extends IRouteHandlerContext = IRouteHandlerContext
+  TContext extends IRouteHandlerContext = IRouteHandlerContext,
 >(
   handler: TRouteHandler<TContext>,
-  props?: ICreateRouteHandlerProps<TContext>
+  props?: ICreateRouteHandlerProps<TContext>,
 ): TWrappedRouteHandler<TContext> {
   return createRouteHandler(handler, {
     middleware: [

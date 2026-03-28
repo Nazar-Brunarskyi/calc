@@ -17,10 +17,12 @@ Defined in `lib/mongodb/interfaces/schema-definition.interface.ts`. Every entity
 
 ### Document type: `IUserSchema`
 
-| Field      | Type     | Notes                                      |
-| ---------- | -------- | ------------------------------------------ |
-| `_id`      | `string` | MongoDB ObjectId; not declared on the schema paths. |
-| `username` | `string` | Required, unique, trimmed.                |
+| Field       | Type      | Notes                                                |
+| ----------- | --------- | ---------------------------------------------------- |
+| `_id`       | `string`  | MongoDB ObjectId; not declared on the schema paths.  |
+| `username`  | `string`  | Required, unique, trimmed.                           |
+| `googleSub` | `string?` | Optional; Google OIDC `sub`, unique sparse when set. |
+| `email`     | `string`  | Required, unique, trimmed, lowercased.               |
 
 Source: `lib/mongodb/schemas/user/user-schema.interface.ts`.
 
@@ -28,7 +30,7 @@ Source: `lib/mongodb/schemas/user/user-schema.interface.ts`.
 
 - **Model / registration name:** `users` (same as the MongoDB collection name).
 - **Collection:** `users` (`collection: 'users'` in schema options).
-- **Timestamps:** not enabled; documents only have `_id` and `username`.
+- **Timestamps:** not enabled.
 
 Source: `lib/mongodb/schemas/user/user.schema.ts`.
 
@@ -36,7 +38,48 @@ Barrel re-exports: `lib/mongodb/schemas/user/index.ts` and `lib/mongodb/schemas/
 
 ## Usage (Next.js server code)
 
+### Manual connection
+
 1. Call `connectMongoDb()` from `lib/mongodb/connect-mongodb.util.ts`.
 2. Obtain the model with `getUserModel(mongoose)` from `lib/mongodb/schemas/user/get-user-model.util.ts` (or `import { getUserModel } from "DB/schemas/user"`), or use `UserSchemaDefinition` directly if you register the schema another way.
 
 More detail and examples: `lib/mongodb/README.md`.
+
+### App Router API routes: `createGlobalRouteHandler`
+
+For `app/**/route.ts` handlers that always need MongoDB, use **`createGlobalRouteHandler`** from `src/route-handlers/global-route-handler.util.ts`.
+
+It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) and prepends route middleware **`withMongoDbConnection`** from `lib/mongodb/with-mongodb-connection-route-middleware.util.ts`. That middleware **`await`s `connectMongoDb()`** before your handler runs; `connectMongoDb` caches the connection globally, so repeated requests reuse the same Mongoose connection. Any extra middleware you pass in `props.middleware` runs **after** the DB is ready.
+
+You do **not** need to call `connectMongoDb()` again inside the handler unless you have a code path that bypasses this wrapper. Use the default **`mongoose`** import with **`getUserModel(mongoose)`** (or other model getters) as usual.
+
+**Example** (pattern used in `app/api/users/[id]/route.ts`):
+
+```ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import mongoose from "mongoose";
+
+import { getUserModel } from "DB/schemas";
+import { createGlobalRouteHandler } from "@/src/route-handlers/global-route-handler.util";
+
+interface IRouteContext {
+  params: Promise<{ id: string }>;
+}
+
+export const GET = createGlobalRouteHandler<IRouteContext>(
+  async (_request: NextRequest, context: IRouteContext) => {
+    const { id } = await context.params;
+    const User = getUserModel(mongoose);
+    const doc = await User.findById(id).lean();
+    if (!doc) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    return NextResponse.json({
+      user: { _id: String(doc._id), username: doc.username },
+    });
+  },
+);
+```
+
+Routes that only sometimes touch the database can use **`createRouteHandler`** and attach **`withMongoDbConnection`** only when needed; see `lib/http/README.md`.

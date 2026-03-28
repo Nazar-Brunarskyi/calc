@@ -30,7 +30,7 @@ export const POST = createRouteHandler(
     // …
     return Response.json({ ok: true });
   },
-  { middleware: withMongoDbConnection }
+  { middleware: withMongoDbConnection },
 );
 ```
 
@@ -46,7 +46,7 @@ export const GET = createRouteHandler<ICtx>(
     const { id } = await ctx.params;
     return Response.json({ id });
   },
-  { middleware: [withMongoDbConnection] }
+  { middleware: [withMongoDbConnection] },
 );
 ```
 

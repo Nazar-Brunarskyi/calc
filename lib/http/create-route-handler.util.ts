@@ -1,10 +1,10 @@
-import type { TRouteMiddleware } from "./route-middleware.type";
-import type { TRouteHandler } from "./route-handler.type";
-import type { TWrappedRouteHandler } from "./wrapped-route-handler.type";
 import type { IRouteHandlerContext } from "./route-handler-context.interface";
+import type { TRouteHandler } from "./route-handler.type";
+import type { TRouteMiddleware } from "./route-middleware.type";
+import type { TWrappedRouteHandler } from "./wrapped-route-handler.type";
 
 export interface ICreateRouteHandlerProps<
-  TContext extends IRouteHandlerContext
+  TContext extends IRouteHandlerContext,
 > {
   middleware?:
     | TRouteMiddleware<TContext>
@@ -13,7 +13,7 @@ export interface ICreateRouteHandlerProps<
 
 /** Normalizes `middleware` option: one function, an array, or undefined → a flat list. */
 export function normalizeRouteMiddleware<
-  TContext extends IRouteHandlerContext
+  TContext extends IRouteHandlerContext,
 >({
   middleware,
 }: ICreateRouteHandlerProps<TContext>): readonly TRouteMiddleware<TContext>[] {
@@ -30,7 +30,7 @@ export function normalizeRouteMiddleware<
 
 export function createRouteHandler<TContext extends IRouteHandlerContext>(
   handler: TRouteHandler<TContext>,
-  props: ICreateRouteHandlerProps<TContext>
+  props: ICreateRouteHandlerProps<TContext>,
 ): TWrappedRouteHandler<TContext> {
   const middlewareList = normalizeRouteMiddleware({
     middleware: props.middleware,

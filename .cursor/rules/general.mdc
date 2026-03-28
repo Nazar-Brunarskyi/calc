@@ -1,5 +1,5 @@
 ---
-description: General TypeScript standards — filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
+description: General TypeScript standards — API services/repositories export a single object (`authService`, `tryCatchService`, `userRepository`); arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
 alwaysApply: true
 ---
 
@@ -23,6 +23,7 @@ Every `*.md` in the repo (add new docs here when you add files):
 - **[lib/mongodb/README.md](../../lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, models, and using **`withMongoDbConnection`** with the HTTP helpers.
 - **[AGENTS.md](../../AGENTS.md)** — Next.js version note for agents: this tree may differ from public docs; read `node_modules/next/dist/docs/` and heed deprecations.
 - **[CLAUDE.md](../../CLAUDE.md)** — Entry that points tooling at **AGENTS.md** so the same agent rules apply.
+- **[.cursor/skills/](../../.cursor/skills/)** — Optional Cursor Agent Skills (`SKILL.md` per folder); see [api-app-service](../../.cursor/skills/api-app-service/SKILL.md) for App Router API service/repository workflow.
 
 ## Module filename suffixes (kebab-case + role)
 
@@ -40,6 +41,80 @@ Use **kebab-case** for the base name, then a **dot-suffix** before the extension
 
 Use **`.tsx`** for React component files that contain JSX (not `.ts`). Apply the same idea for other single-purpose modules when adding new roles. **Do not** use a bare `name-name.ts` for new files when one of the roles above fits.
 
+## Arrow functions — no `function` keyword
+
+Do **not** declare functions with the `function` keyword. Use **`const name = …`** with an **arrow function** for module-level helpers, exports, and nested functions. **Class methods** use the same style as **arrow instance fields** (e.g. `update = ({ id, patch }: IUpdateProps) => { … }`) so the `function` keyword is not used.
+
+```typescript
+// ❌ BAD
+function parse(input: string): number {
+  return Number(input);
+}
+
+// ✅ GOOD
+const parse = (input: string): number => Number(input);
+
+// ✅ GOOD — exported async
+export const loadUser = async (id: string): Promise<IUser | null> => {
+  // ...
+};
+```
+
+## App Router API — service and repository exports
+
+For modules under **`app/api/_shared/service/`**, **`app/api/_shared/repository/`**, and **`app/api/**/service/`** (provider-specific), export **one object** per file as the main callable API. Use **`camelCase`** names: `authService`, `tryCatchService`, `userRepository`, `googleOAuthService`. Callers import that object and invoke methods (e.g. `authService.buildOauthRedirect(props)`).
+
+- Keep **types** (`interface` / shared props) exported from the same file when they are API-layer only; promote to `src/interfaces` when shared more broadly (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §5).
+- **Do not** rely on many separate exported function names as the primary pattern for these layers — the object groups the module’s public surface.
+- **Private helpers (service/repository modules):** A **private** helper is a module-level `const` that does **not** appear as a key on **`export const authService` / `tryCatchService` / `userRepository` / `googleOAuthService` / …**. Mark those **only** with:
+  ```ts
+  /**
+   * PRIVATE
+   */
+  const helperName = ...
+  ```
+- **Do not** add other `/** … */` comment blocks on implementation `const`s in those files — no descriptive JSDoc on methods that **are** listed on the exported object, and no extra docs on the public `const` exports themselves unless the team later chooses otherwise.
+
+```typescript
+const buildOauthRedirect = ({
+  request,
+  path,
+  query,
+  stateCookieName,
+}: IBuildOauthRedirectProps): NextResponse => {
+  // ...
+};
+
+export const authService = {
+  clearOAuthStateCookie,
+  buildOauthRedirect,
+};
+```
+
+```typescript
+import { authService } from "@/app/api/_shared/service/auth/auth.service";
+
+authService.buildOauthRedirect({ request, path, query, stateCookieName });
+```
+
+**`tryCatchService`** ([`app/api/_shared/service/try-catch/try-catch.service.ts`](../../app/api/_shared/service/try-catch/try-catch.service.ts)): shared **`runSync`** / **`runAsync`** wrappers that return **`null`** on any throw so callers can use **`const`** + null checks instead of `let` + try/catch assignment. Use for API orchestration when errors are handled uniformly (e.g. redirect with a code). Do **not** use when you need **`catch (error)`** for logging or typed error handling — keep an explicit `try` / `catch` there.
+
+```typescript
+import { tryCatchService } from "@/app/api/_shared/service/try-catch/try-catch.service";
+
+const env = tryCatchService.runSync(() => readGoogleOauthEnv());
+if (env === null) {
+  return /* error response */;
+}
+
+const data = await tryCatchService.runAsync(() => fetchSomething());
+if (data === null) {
+  return /* error response */;
+}
+```
+
+Placement and folder layout: [ARCHITECTURE.md](../../ARCHITECTURE.md) §5. Step-by-step skill for agents: [.cursor/skills/api-app-service/SKILL.md](../../.cursor/skills/api-app-service/SKILL.md).
+
 ## Component map — existence and reuse
 
 Before implementing **new** UI (a new component file or a one-off that could become shared), open [COMPONENT_MAP.md](../../COMPONENT_MAP.md) at the repository root.
@@ -54,22 +129,18 @@ Do not use `any`. Prefer explicit types, generics, or `unknown` with narrowing.
 
 ```typescript
 // ❌ BAD
-function parse(input: any): number {
-  return Number(input);
-}
+const parseBad = (input: any): number => Number(input);
 
 // ✅ GOOD — explicit type
-function parse(input: string | number): number {
-  return Number(input);
-}
+const parse = (input: string | number): number => Number(input);
 
 // ✅ GOOD — unknown + narrowing
-function parse(input: unknown): number {
+const parseUnknown = (input: unknown): number => {
   if (typeof input === "string" || typeof input === "number") {
     return Number(input);
   }
   throw new TypeError("Expected string or number");
-}
+};
 ```
 
 ```typescript
@@ -89,45 +160,54 @@ const data = JSON.parse(raw) as ParsedShape;
 
 If a function (or method) has **more than one** parameter, replace positional parameters with a **single object** whose type is an interface named **`I` + `PascalCase` function name + `Props`**.
 
+**Destructure that object in the parameter list** (`({ name, email, role }: ICreateUserProps) => …`). Do **not** take a single `props` parameter and then assign `const { … } = props` on the next line unless you need the whole object (rare).
+
 Single-parameter functions stay as-is (no props interface required).
 
 ```typescript
 // ❌ BAD — more than one positional argument
-function createUser(name: string, email: string, role: "admin" | "user") {
+const createUserBad = (
+  name: string,
+  email: string,
+  role: "admin" | "user"
+): void => {
   // ...
-}
+};
 
-// ✅ GOOD — one object + ICreateUserProps
+// ✅ GOOD — one object + ICreateUserProps, destructure in the signature
 interface ICreateUserProps {
   name: string;
   email: string;
   role: "admin" | "user";
 }
 
-function createUser(props: ICreateUserProps) {
-  const { name, email, role } = props;
+const createUser = ({
+  name,
+  email,
+  role,
+}: ICreateUserProps): void => {
   // ...
-}
+};
 
-// optional: destructure in the signature
-function createUser({ name, email, role }: ICreateUserProps) {
-  // ...
-}
+// ❌ BAD — redundant props + destructure
+const createUserVerbose = (props: ICreateUserProps): void => {
+  const { name, email, role } = props;
+};
 ```
 
 ```typescript
 // ✅ OK — only one argument, no I*Props needed
-function getUserById(id: string) {
+const getUserById = (id: string): void => {
   // ...
-}
+};
 ```
 
 For **class methods**, use the class method name in the interface: e.g. `save` with two args → `ISaveProps` (or `IUserRepositorySaveProps` if you need disambiguation across classes).
 
 ```typescript
 // ❌ BAD
-class UserRepository {
-  update(id: string, patch: Partial<User>) {}
+class UserRepositoryBad {
+  update(id: string, patch: Partial<User>): void {}
 }
 
 // ✅ GOOD
@@ -137,9 +217,9 @@ interface IUpdateProps {
 }
 
 class UserRepository {
-  update(props: IUpdateProps) {
-    const { id, patch } = props;
-  }
+  update = ({ id, patch }: IUpdateProps): void => {
+    // ...
+  };
 }
 ```
 
@@ -157,14 +237,14 @@ interface IUser {
   name: string;
 }
 
-export function UserCard() {
+export const UserCard = () => {
   const user: IUser = {
     id: "1",
     name: "John",
   };
 
   return <div>{user.name}</div>;
-}
+};
 ```
 
 ### Component props
@@ -177,9 +257,9 @@ interface IProps {
   onClick: () => void;
 }
 
-export function Button({ title, onClick }: IProps) {
-  return <button onClick={onClick}>{title}</button>;
-}
+export const Button = ({ title, onClick }: IProps) => (
+  <button onClick={onClick}>{title}</button>
+);
 ```
 
 **Rule of thumb:** shape used only here → same-file `interface` with `I` prefix (`IProps` for props, `IUser` for a local entity, etc.). When an object shape is shared across modules, extract it to `src/interfaces`; when a shared **`type`** alias or union/utility type is needed, use `src/types` (see `ARCHITECTURE.md`) — avoid over-engineering until then.

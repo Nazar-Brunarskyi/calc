@@ -1,6 +1,6 @@
-import type { NextRequest } from "next/server";
 import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
+import type { NextRequest } from "next/server";
 import { connectMongoDb } from "./connect-mongodb.util";
 
 /**
