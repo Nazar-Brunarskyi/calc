@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useAuth } from "@/src/features/auth/providers/auth-provider.component";
 
 export const ProfileView = () => {
@@ -18,12 +16,6 @@ export const ProfileView = () => {
       <p className="text-lg text-zinc-700 dark:text-zinc-300">
         Name: {user.username}
       </p>
-      <Link
-        className="text-base font-medium text-zinc-700 underline-offset-4 transition-colors hover:text-zinc-900 hover:underline dark:text-zinc-300 dark:hover:text-zinc-50"
-        href="/profile2"
-      >
-        Go to Profile 2
-      </Link>
     </div>
   );
 };

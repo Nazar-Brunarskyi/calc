@@ -26,8 +26,6 @@ interface IAuthProviderProps {
 export const AuthProvider = ({ children, initialUser }: IAuthProviderProps) => {
   const [user, setUserState] = useState<IUserMe | null>(initialUser);
 
-  console.log({ user, initialUser }); // TODO: remove console.log
-
   useEffect(() => {
     setUserState(initialUser);
   }, [initialUser]);
