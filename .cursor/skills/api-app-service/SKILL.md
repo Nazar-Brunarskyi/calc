@@ -51,7 +51,9 @@ Use this workflow when:
 | [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | **`authService.buildOauthRedirect`** — optional **`extraCookies`** alongside cleared OAuth state cookie. |
 | [app/api/\_shared/services/try-catch/try-catch.service.ts](../../../app/api/_shared/services/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
 | [app/api/\_shared/repository/user/user.repository.ts](../../../app/api/_shared/repository/user/user.repository.ts)         | Example: `export const userRepository = { … }`.                                    |
-| [app/api/\_shared/mappers/user.mapper.ts](../../../app/api/_shared/mappers/user.mapper.ts)                                 | Example: `export const userMapper = { toAppUser, toUserMe }` — DB / **`IAppUser`** / **`src/interfaces`** DTOs. |
+| [app/api/\_shared/mappers/user.mapper.ts](../../../app/api/_shared/mappers/user.mapper.ts)                                 | Example: `export const userMapper = { toAppUser, toUserMe }` — DB / **`IAppUser`** / **`src/interfaces`** shapes. |
+| [src/DTOs/me/get-me-response.dto.ts](../../../src/DTOs/me/get-me-response.dto.ts) | Shared **HTTP success body** `interface` (e.g. **`IGetMeResponseDto`**) for **`sendResponse`** and client typing; composes **`src/interfaces`**. |
+| [app/api/me/route.ts](../../../app/api/me/route.ts) | Thin **`GET`** with **`createGlobalRouteHandler`** + **`withAuthMiddleware`**; **`sendResponse<IGetMeResponseDto>({ user: userMapper.toUserMe(user) })`**. |
 | [app/api/\_shared/repository/session/session.repository.ts](../../../app/api/_shared/repository/session/session.repository.ts) | Example: `export const sessionRepository = { createSessionForUser }`; **`SESSION_MAX_AGE_SECONDS`** for cookie **`maxAge`**. |
 | [app/api/\_shared/utils/redirect-response.util.ts](../../../app/api/_shared/utils/redirect-response.util.ts)                 | **`redirectResponse`** — `NextResponse.redirect` plus optional cookie sets (used by `authService` and provider flows). |
 | [app/api/auth/google/\_service/google-oauth.service.ts](../../../app/api/auth/google/_service/google-oauth.service.ts)        | Example: provider orchestration + `googleOAuthService`.                            |
@@ -77,6 +79,7 @@ Use this workflow when:
 5. **Route handler** — `app/api/**/route.ts`
    - Stay **thin**: `createRouteHandler` or `createGlobalRouteHandler`; call `<provider>Service.method(request)` or similar.
    - No business logic or direct `getUserModel` if a repository already exists for that entity.
+   - Typed JSON success bodies shared with the client: **`sendResponse<YourDto>(…)`** with **`YourDto`** from **`@/src/DTOs/<domain>/…`** (or **`@src/DTOs/…`**).
 
 ## Implementation checklist
 
@@ -86,7 +89,7 @@ Use this workflow when:
 - [ ] Prefer **`tryCatchService.runSync` / `runAsync`** for steps where failure is handled the same way (e.g. redirect); use explicit **`try` / `catch`** when logging or inspecting `error`.
 - [ ] **`/** PRIVATE */`:** only on module-level `const`helpers **not** listed on the exported`*Service`/`userRepository`/`*Mapper`object; **no** other descriptive`/\*_ … _/`on implementation`const`s in those modules.
 - [ ] **Imports** use `@/app/api/...` paths.
-- [ ] **Types**: keep `interface` in the same file until shared app-wide; then `src/interfaces` per ARCHITECTURE.
+- [ ] **Types**: keep `interface` in the same file until shared app-wide; then `src/interfaces` per ARCHITECTURE. **HTTP JSON body** shared by route + client → **`src/DTOs/<domain>/*.dto.ts`**.
 - [ ] **Update** [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5 if you introduce a **new top-level pattern** or folder.
 - [ ] **Error classes:** If you add **`AppError`** subclasses under **`instances/`**, update [ARCHITECTURE.md](../../../ARCHITECTURE.md) §4 (HTTP route helpers), this skill’s canonical table, and [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc) if the intentional-throw guidance should mention them.
 
@@ -98,6 +101,7 @@ import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
 import { sessionRepository } from "@/app/api/_shared/repository/session/session.repository";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { googleOAuthService } from "@/app/api/auth/google/_service/google-oauth.service";
+import type { IGetMeResponseDto } from "@/src/DTOs/me/get-me-response.dto";
 ```
 
 ## New OAuth provider (sketch)

@@ -52,6 +52,7 @@ Do **not** paste long policy from **general.mdc** into other docs — edit the s
 | Area touched | Update |
 | ------------ | ------ |
 | `app/api/**`, routes, error classes, `createGlobalRouteHandler` | [ARCHITECTURE.md](../../../ARCHITECTURE.md) (HTTP + API), [lib/http/README.md](../../../lib/http/README.md), [api-app-service/SKILL.md](../api-app-service/SKILL.md) table if paths changed |
+| `src/DTOs/**`, path alias `@src/DTOs/*` | [ARCHITECTURE.md](../../../ARCHITECTURE.md) (`src/` tree, path aliases), [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc) (suffix table), [api-app-service/SKILL.md](../api-app-service/SKILL.md) table if examples change |
 | UI (catalogued components) | [COMPONENT_MAP.md](../../../COMPONENT_MAP.md) |
 | Schemas / collections / models | [db-schema.md](../../../db-schema.md), [lib/mongodb/README.md](../../../lib/mongodb/README.md) if needed |
 | New root `*.md` | [README.md](../../../README.md), [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc) “Project Markdown files” |

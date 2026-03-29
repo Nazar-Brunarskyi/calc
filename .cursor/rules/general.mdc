@@ -5,7 +5,7 @@ alwaysApply: true
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders).
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/DTOs`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders); shared **HTTP JSON body** interfaces for routes and clients live under **`src/DTOs/<domain>/`** as **`*.dto.ts`**.
 
 Under **`src/features/<feature>/components/`** and **`src/features/<feature>/providers/`**, use **one folder per** component or provider; the module file sits inside that folder (e.g. **`src/features/auth/providers/auth-provider/auth-provider.component.tsx`**, **`src/features/auth/components/require-auth-gate/require-auth-gate.component.tsx`**). **Higher-order components** live under **`src/features/<feature>/components/HOCS/<hoc-name>/`** (e.g. **`src/features/auth/components/HOCS/with-auth/with-auth.hoc.tsx`**). **`QueryClientProviderComponent`** (TanStack Query) lives under **`src/features/query/providers/`** (same one-folder-per-module pattern when multiple files exist there). Folder placement and other layout rules are in that doc.
 
@@ -18,7 +18,7 @@ For reusable libraries under `lib/`, prefer a local `README.md` when usage is no
 Every `*.md` in the repo (add new docs here when you add files):
 
 - **[README.md](../../README.md)** — Project overview, stack, dev server, and links into the other root docs.
-- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `constants`, `hooks`, `hooks/api/<domain>/`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`, `hooks/api/<domain>/`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
 - **[COMPONENT_MAP.md](../../COMPONENT_MAP.md)** — Catalog of UI components (name → path); check before new UI; update in the same change when the catalog changes.
 - **[db-schema.md](../../db-schema.md)** — MongoDB/Mongoose schema reference per entity, `ISchemaDefinition`, collections/models, and the `DB/*` import alias.
 - **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware **`next()`** / order / short-circuit, shared route types, typing dynamic `params`.
@@ -34,6 +34,7 @@ Use **kebab-case** for the base name, then a **dot-suffix** before the extension
 | Role | Pattern | Example |
 |------|---------|---------|
 | Interface module | `name-name.interface.ts` | `user-profile.interface.ts` |
+| DTO module (HTTP JSON bodies under `src/DTOs/`) | `name-name.dto.ts` | `get-me-response.dto.ts` |
 | React component | `name-name.component.tsx` | `primary-button.component.tsx` |
 | Type module (`type` aliases, unions, utilities) | `name-name.type.ts` | `api-error.type.ts` |
 | Enum module | `name-name.enum.ts` | `order-status.enum.ts` |
