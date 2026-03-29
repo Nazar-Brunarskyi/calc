@@ -1,28 +1,31 @@
 ---
-description: General TypeScript standards — filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
+description: General TypeScript standards — API services/repositories/mappers export a single object (`authService`, `tryCatchService`, `userRepository`, `userMapper`); TanStack Query under `src/features/query/providers/` and `src/hooks/api/<domain>/` with `useAppQuery` / `_shared` error handlers for API reads; arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
 alwaysApply: true
 ---
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). Folder placement and other layout rules are in that doc.
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/DTOs`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders); shared **HTTP JSON body** interfaces for routes and clients live under **`src/DTOs/<domain>/`** as **`*.dto.ts`**.
+
+Under **`src/features/<feature>/components/`** and **`src/features/<feature>/providers/`**, use **one folder per** component or provider; the module file sits inside that folder (e.g. **`src/features/auth/providers/auth-provider/auth-provider.component.tsx`**, **`src/features/auth/components/require-auth-gate/require-auth-gate.component.tsx`**). **Higher-order components** live under **`src/features/<feature>/components/HOCS/<hoc-name>/`** (e.g. **`src/features/auth/components/HOCS/with-auth/with-auth.hoc.tsx`**). **`QueryClientProviderComponent`** (TanStack Query) lives under **`src/features/query/providers/`** (same one-folder-per-module pattern when multiple files exist there). Folder placement and other layout rules are in that doc.
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 
-**App Router API routes (`app/**/route.ts`):** Compose handlers with **`createRouteHandler`** from `@/lib/http/create-route-handler.util` and optional **`TRouteMiddleware`** (see [lib/http/README.md](../../lib/http/README.md)). For routes that always need MongoDB first, prefer **`createGlobalRouteHandler`** from `@/src/global-route-handler.util` (wraps `createRouteHandler` + `withMongoDbConnection`). Details and types live under `lib/http/`; placement rules for this stack are in [ARCHITECTURE.md](../../ARCHITECTURE.md) (HTTP route helpers).
+**App Router API routes (`app/**/route.ts`):** Compose handlers with **`createRouteHandler`** from `@/lib/http/create-route-handler.util` and optional **`TRouteMiddleware`** using **`next()`** (see [lib/http/README.md](../../lib/http/README.md)). Shared types and `createRouteHandler` live under **`lib/http/`**. **`withMongoDbConnection`** and **`createGlobalRouteHandler`** live under **`app/api/_shared/route-handlers/`**; **`withRouteErrorHandler`**, **`AppError`**, **`appErrorResponseService`**, and **`jsonErrorBody`** live under **`app/api/_shared/features/error-handling/`** (`middlewares/`, `instances/`, `services/`, `utils/`). Shared **`APP_ERROR_CODES_TYPE`**, snackbar enums, and **`ISnackbarArgs`** live under **`src/features/error-handling/`**. The global handler wraps `createRouteHandler` with error handling + DB connection. For **intentional** HTTP errors (message + status for the client), **`throw new AppError({ … })`**, or **`BadRequestError`** / **`NotFoundError`** from the same **`instances/`** folder for fixed **400** / **404** responses; a bare **`Error`** caught by **`withRouteErrorHandler`** is turned into a generic **500** body (message hidden). Placement and full behavior: [ARCHITECTURE.md](../../ARCHITECTURE.md) (HTTP route helpers).
 
 ## Project Markdown files
 
 Every `*.md` in the repo (add new docs here when you add files):
 
 - **[README.md](../../README.md)** — Project overview, stack, dev server, and links into the other root docs.
-- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `types`, `interfaces`, `constants`, `hooks`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`, `hooks/api/<domain>/`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
 - **[COMPONENT_MAP.md](../../COMPONENT_MAP.md)** — Catalog of UI components (name → path); check before new UI; update in the same change when the catalog changes.
 - **[db-schema.md](../../db-schema.md)** — MongoDB/Mongoose schema reference per entity, `ISchemaDefinition`, collections/models, and the `DB/*` import alias.
-- **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware order/short-circuit, shared route types, typing dynamic `params`.
-- **[lib/mongodb/README.md](../../lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, models, and using **`withMongoDbConnection`** with the HTTP helpers.
+- **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware **`next()`** / order / short-circuit, shared route types, typing dynamic `params`.
+- **[lib/mongodb/README.md](../../lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, models; **`withMongoDbConnection`** is documented there but implemented under **`app/api/_shared/route-handlers/`** (use with `createRouteHandler` per [lib/http/README.md](../../lib/http/README.md)).
 - **[AGENTS.md](../../AGENTS.md)** — Next.js version note for agents: this tree may differ from public docs; read `node_modules/next/dist/docs/` and heed deprecations.
 - **[CLAUDE.md](../../CLAUDE.md)** — Entry that points tooling at **AGENTS.md** so the same agent rules apply.
+- **[.cursor/skills/](../../.cursor/skills/)** — Optional Cursor Agent Skills (`SKILL.md` per folder); see [api-app-service](../../.cursor/skills/api-app-service/SKILL.md) for App Router API services, repositories, and mappers workflow.
 
 ## Module filename suffixes (kebab-case + role)
 
@@ -31,14 +34,109 @@ Use **kebab-case** for the base name, then a **dot-suffix** before the extension
 | Role | Pattern | Example |
 |------|---------|---------|
 | Interface module | `name-name.interface.ts` | `user-profile.interface.ts` |
+| DTO module (HTTP JSON bodies under `src/DTOs/`) | `name-name.dto.ts` | `get-me-response.dto.ts` |
 | React component | `name-name.component.tsx` | `primary-button.component.tsx` |
 | Type module (`type` aliases, unions, utilities) | `name-name.type.ts` | `api-error.type.ts` |
 | Enum module | `name-name.enum.ts` | `order-status.enum.ts` |
 | Constants | `name-name.const.ts` | `routes.const.ts` |
 | Pure helpers / utilities (non-hook functions) | `name-name.util.ts` | `class-names.util.ts` |
+| API mapper (DTO / shape transforms under `app/api/_shared/mappers/`) | `name-name.mapper.ts` | `user.mapper.ts` |
 | Hook module | `name-name.hook.ts` | `use-media-query.hook.ts` |
 
 Use **`.tsx`** for React component files that contain JSX (not `.ts`). Apply the same idea for other single-purpose modules when adding new roles. **Do not** use a bare `name-name.ts` for new files when one of the roles above fits.
+
+## TanStack Query (`@tanstack/react-query`)
+
+- **Provider:** **`QueryClientProviderComponent`** in **`src/features/query/providers/query-client-provider.component.tsx`**. Root layout nests **`AuthProvider`** inside it (see [ARCHITECTURE.md](../../ARCHITECTURE.md) — **TanStack Query**).
+- **Hooks:** Add **`useQuery`** / **`useMutation`** wrappers under **`src/hooks/api/<domain>/`** as **`*.hook.ts`** (e.g. **`use-user-profile.query.hook.ts`**, **`use-save-profile.mutation.hook.ts`**). Consumers must be **client** components.
+- **Query keys:** Colocate **`*.query-keys.const.ts`** factories in the same **`src/hooks/api/<domain>/`** folder; use them for stable **`queryKey`** arrays.
+- **Reads — `useAppQuery`:** Prefer **`useAppQuery`** from **`src/hooks/api/_shared/use-app-query.hook.ts`** instead of raw **`useQuery`** for hooks that call **`/api/**`**. It sets **`retry: false`** and wraps **`queryFn`** with **`useGlobalErrorHandlers().wrapFunction`**, so **`FetchApiError`** with registered **`error.body.error_code`** values (e.g. **`APP_LEVEL_UNAUTHORIZED`** → **`replace("/login")`**) run without leaving the query in **error** state (handled path returns **`null`**). See **`use-error-handler.hook.ts`** and **`use-global-error-handlers.hook.ts`**.
+- **Client fetch:** Use **`fetchApiJson`** and **`FetchApiError`** from **`src/utils/fetch-api-json.util.ts`** for browser **`fetch`**, JSON parsing, and **`credentials: "include"`**. Non-OK responses throw **`FetchApiError`**; do not fold that into **`fetchApiJson`** — keep domain or global handling in hooks (**`useAppQuery`** / **`useErrorHandler`**) or explicit **`try`/`catch`** in **`queryFn`** / **`mutationFn`** when you intentionally bypass the global wrapper.
+- **Front-end error pipeline:** **`IApiErrorBody`**, **`FetchApiError`**, **`error_code`** matching, TanStack **`isSuccess` / `isError`**, mutations, and RSC vs client — see [ARCHITECTURE.md](../../ARCHITECTURE.md) subsection **Front-end API error handling** (after **TanStack Query**).
+- **Same standards:** Arrow functions only, no **`any`**, multi-arg helpers use **`I<FuncName>Props`**.
+
+## Arrow functions — no `function` keyword
+
+Do **not** declare functions with the `function` keyword. Use **`const name = …`** with an **arrow function** for module-level helpers, exports, and nested functions. **Class methods** use the same style as **arrow instance fields** (e.g. `update = ({ id, patch }: IUpdateProps) => { … }`) so the `function` keyword is not used.
+
+```typescript
+// ❌ BAD
+function parse(input: string): number {
+  return Number(input);
+}
+
+// ✅ GOOD
+const parse = (input: string): number => Number(input);
+
+// ✅ GOOD — exported async
+export const loadUser = async (id: string): Promise<IUser | null> => {
+  // ...
+};
+```
+
+## App Router API — service, repository, and mapper exports
+
+For modules under **`app/api/_shared/services/`**, **`app/api/_shared/repository/`**, **`app/api/_shared/mappers/`**, and **`app/api/**/service/`** (provider-specific), export **one object** per file as the main callable API. Use **`camelCase`** names: `authService`, `tryCatchService`, `userRepository`, `userMapper`, `googleOAuthService`. Callers import that object and invoke methods (e.g. `authService.buildOauthRedirect(props)`, `userMapper.toUserMe(user)`).
+
+**Mappers** are **pure transforms** between persistence/schema types, **`app/api/_shared/interfaces`**, and **`src/interfaces`** DTOs — no DB I/O. One file per concern (e.g. **`user.mapper.ts`** → **`userMapper`**); add **`<entity>.mapper.ts`** when another entity needs mapping.
+
+- Keep **types** (`interface` / shared props) exported from the same file when they are API-layer only; promote to `src/interfaces` when shared more broadly (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §5).
+- **Do not** rely on many separate exported function names as the primary pattern for these layers — the object groups the module’s public surface.
+- **Private helpers (service / repository / mapper modules):** A **private** helper is a module-level `const` that does **not** appear as a key on **`export const authService` / `tryCatchService` / `userRepository` / `userMapper` / `googleOAuthService` / …**. Mark those **only** with:
+  ```ts
+  /**
+   * PRIVATE
+   */
+  const helperName = ...
+  ```
+- **Do not** add other `/** … */` comment blocks on implementation `const`s in those files — no descriptive JSDoc on methods that **are** listed on the exported object, and no extra docs on the public `const` exports themselves unless the team later chooses otherwise.
+
+```typescript
+const buildOauthRedirect = ({
+  request,
+  path,
+  query,
+  stateCookieName,
+}: IBuildOauthRedirectProps): NextResponse => {
+  // ...
+};
+
+export const authService = {
+  clearOAuthStateCookie,
+  buildOauthRedirect,
+};
+```
+
+```typescript
+import { authService } from "@/app/api/_shared/services/auth/auth.service";
+
+authService.buildOauthRedirect({ request, path, query, stateCookieName });
+```
+
+```typescript
+import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
+
+userMapper.toAppUser(doc);
+userMapper.toUserMe(appUser);
+```
+
+**`tryCatchService`** ([`app/api/_shared/services/try-catch/try-catch.service.ts`](../../app/api/_shared/services/try-catch/try-catch.service.ts)): shared **`runSync`** / **`runAsync`** wrappers that return **`null`** on any throw so callers can use **`const`** + null checks instead of `let` + try/catch assignment. Use for API orchestration when errors are handled uniformly (e.g. redirect with a code). Do **not** use when you need **`catch (error)`** for logging or typed error handling — keep an explicit `try` / `catch` there.
+
+```typescript
+import { tryCatchService } from "@/app/api/_shared/services/try-catch/try-catch.service";
+
+const env = tryCatchService.runSync(() => readGoogleOauthEnv());
+if (env === null) {
+  return /* error response */;
+}
+
+const data = await tryCatchService.runAsync(() => fetchSomething());
+if (data === null) {
+  return /* error response */;
+}
+```
+
+Placement and folder layout: [ARCHITECTURE.md](../../ARCHITECTURE.md) §5. Step-by-step skill for agents: [.cursor/skills/api-app-service/SKILL.md](../../.cursor/skills/api-app-service/SKILL.md).
 
 ## Component map — existence and reuse
 
@@ -54,22 +152,18 @@ Do not use `any`. Prefer explicit types, generics, or `unknown` with narrowing.
 
 ```typescript
 // ❌ BAD
-function parse(input: any): number {
-  return Number(input);
-}
+const parseBad = (input: any): number => Number(input);
 
 // ✅ GOOD — explicit type
-function parse(input: string | number): number {
-  return Number(input);
-}
+const parse = (input: string | number): number => Number(input);
 
 // ✅ GOOD — unknown + narrowing
-function parse(input: unknown): number {
+const parseUnknown = (input: unknown): number => {
   if (typeof input === "string" || typeof input === "number") {
     return Number(input);
   }
   throw new TypeError("Expected string or number");
-}
+};
 ```
 
 ```typescript
@@ -89,45 +183,54 @@ const data = JSON.parse(raw) as ParsedShape;
 
 If a function (or method) has **more than one** parameter, replace positional parameters with a **single object** whose type is an interface named **`I` + `PascalCase` function name + `Props`**.
 
+**Destructure that object in the parameter list** (`({ name, email, role }: ICreateUserProps) => …`). Do **not** take a single `props` parameter and then assign `const { … } = props` on the next line unless you need the whole object (rare).
+
 Single-parameter functions stay as-is (no props interface required).
 
 ```typescript
 // ❌ BAD — more than one positional argument
-function createUser(name: string, email: string, role: "admin" | "user") {
+const createUserBad = (
+  name: string,
+  email: string,
+  role: "admin" | "user"
+): void => {
   // ...
-}
+};
 
-// ✅ GOOD — one object + ICreateUserProps
+// ✅ GOOD — one object + ICreateUserProps, destructure in the signature
 interface ICreateUserProps {
   name: string;
   email: string;
   role: "admin" | "user";
 }
 
-function createUser(props: ICreateUserProps) {
-  const { name, email, role } = props;
+const createUser = ({
+  name,
+  email,
+  role,
+}: ICreateUserProps): void => {
   // ...
-}
+};
 
-// optional: destructure in the signature
-function createUser({ name, email, role }: ICreateUserProps) {
-  // ...
-}
+// ❌ BAD — redundant props + destructure
+const createUserVerbose = (props: ICreateUserProps): void => {
+  const { name, email, role } = props;
+};
 ```
 
 ```typescript
 // ✅ OK — only one argument, no I*Props needed
-function getUserById(id: string) {
+const getUserById = (id: string): void => {
   // ...
-}
+};
 ```
 
 For **class methods**, use the class method name in the interface: e.g. `save` with two args → `ISaveProps` (or `IUserRepositorySaveProps` if you need disambiguation across classes).
 
 ```typescript
 // ❌ BAD
-class UserRepository {
-  update(id: string, patch: Partial<User>) {}
+class UserRepositoryBad {
+  update(id: string, patch: Partial<User>): void {}
 }
 
 // ✅ GOOD
@@ -137,9 +240,9 @@ interface IUpdateProps {
 }
 
 class UserRepository {
-  update(props: IUpdateProps) {
-    const { id, patch } = props;
-  }
+  update = ({ id, patch }: IUpdateProps): void => {
+    // ...
+  };
 }
 ```
 
@@ -157,14 +260,14 @@ interface IUser {
   name: string;
 }
 
-export function UserCard() {
+export const UserCard = () => {
   const user: IUser = {
     id: "1",
     name: "John",
   };
 
   return <div>{user.name}</div>;
-}
+};
 ```
 
 ### Component props
@@ -177,9 +280,9 @@ interface IProps {
   onClick: () => void;
 }
 
-export function Button({ title, onClick }: IProps) {
-  return <button onClick={onClick}>{title}</button>;
-}
+export const Button = ({ title, onClick }: IProps) => (
+  <button onClick={onClick}>{title}</button>
+);
 ```
 
 **Rule of thumb:** shape used only here → same-file `interface` with `I` prefix (`IProps` for props, `IUser` for a local entity, etc.). When an object shape is shared across modules, extract it to `src/interfaces`; when a shared **`type`** alias or union/utility type is needed, use `src/types` (see `ARCHITECTURE.md`) — avoid over-engineering until then.

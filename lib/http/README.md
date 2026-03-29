@@ -2,16 +2,17 @@
 
 ## `createRouteHandler`
 
-Use in `app/**/route.ts` to compose **route middleware** around a handler.
+Use in `app/**/route.ts` to compose **route middleware** around a handler (Express-style **onion**).
 
-- Pass `middleware` as one function or an array; each runs in order.
-- If middleware returns a `Response` / `NextResponse`, that response is sent and the handler is skipped.
-- Returning nothing (`void`) continues to the next middleware, then the handler.
+- Pass `middleware` as one function or an array. The **first** entry is the **outermost** layer: it runs first on the way in; `await next()` runs the **rest of the chain**, including inner middleware and finally the route handler.
+- **`next`:** Each middleware is `(request, context, next) => …` where **`TRouteNext`** is `() => Promise<Response | NextResponse>`. Call **`return await next()`** (or `return next()` when your middleware is `async`) to continue. **`next()` must be invoked at most once** per middleware invocation (a dev-time guard throws if called twice).
+- **Short-circuit:** Return a `Response` / `NextResponse` **without** calling `next` — same idea as sending a response in Express and not calling `next()`.
 
 Shared types (import paths use the `@/` alias):
 
 - `IRouteHandlerContext` — `@/lib/http/route-handler-context.interface` (base shape for the App Router handler `context` argument; use this name for default generics and middleware that only need optional `params`)
 - `TRouteMiddleware` — `@/lib/http/route-middleware.type`
+- `TRouteNext` — `@/lib/http/route-middleware.type`
 - `ICreateRouteHandlerProps` — `@/lib/http/create-route-handler.util` (optional `middleware` for `createRouteHandler` and `createGlobalRouteHandler`)
 - `TRouteHandler` / `TRouteHandlerReturn` — `@/lib/http/route-handler.type`
 - `TWrappedRouteHandler` — `@/lib/http/wrapped-route-handler.type`
@@ -23,14 +24,14 @@ Example:
 ```ts
 import type { NextRequest } from "next/server";
 import { createRouteHandler } from "@/lib/http/create-route-handler.util";
-import { withMongoDbConnection } from "@/lib/mongodb/with-mongodb-connection-route-middleware.util";
+import { withMongoDbConnection } from "@/app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util";
 
 export const POST = createRouteHandler(
   async (request: NextRequest) => {
     // …
     return Response.json({ ok: true });
   },
-  { middleware: withMongoDbConnection }
+  { middleware: withMongoDbConnection },
 );
 ```
 
@@ -46,17 +47,17 @@ export const GET = createRouteHandler<ICtx>(
     const { id } = await ctx.params;
     return Response.json({ id });
   },
-  { middleware: [withMongoDbConnection] }
+  { middleware: [withMongoDbConnection] },
 );
 ```
 
 ## `createGlobalRouteHandler` (MongoDB preset)
 
-When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/src/global-route-handler.util`. It is `createRouteHandler` with `withMongoDbConnection` always first; optional `middleware` runs after that. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
+When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with middleware order **`[withRouteErrorHandler, withMongoDbConnection, …props.middleware]`**: the error wrapper is **outermost** (runs first on the way in), then the MongoDB connection step, then any optional `middleware` you pass in props. On uncaught errors, **`withRouteErrorHandler`** returns **`NextResponse.json(jsonErrorBody(…), { status })`** (see `app/api/_shared/features/error-handling/`): thrown **`AppError`** and its subclasses (e.g. **`BadRequestError`**, **`NotFoundError`** in `instances/`), plus plain objects accepted by **`appErrorResponseService.getResponseFields`**, become a body with **`error`** (their message), optional **`error_code`**, optional **`snackbar`**, and their **`statusCode`**. Any other thrown **`Error`** or non-object value gets status **500** with **`error: "Internal Server Error"`** and **`error_code: "APP_LEVEL_UNKNOWN_ERROR"`** (**`APP_UNKNOWN_ERROR_TYPES_ENUM`**)—client responses do **not** include the original **`Error.message`** unless it went through **`AppError`** / recognized app-error shape. **`jsonErrorBody`** omits **`error_code`** and **`snackbar`** keys when those values are **`undefined`**. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
 
 ```ts
 import type { NextRequest } from "next/server";
-import { createGlobalRouteHandler } from "@/src/global-route-handler.util";
+import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
 
 interface ICtx {
   params: Promise<{ id: string }>;
@@ -67,3 +68,22 @@ export const GET = createGlobalRouteHandler<ICtx>(async (_req, ctx) => {
   return Response.json({ id });
 });
 ```
+
+**Typing and auth:** **`createGlobalRouteHandler`** is implemented with a cast so the **exported** route matches the App Router’s base **`context`** shape (**`IRouteHandlerContext`**), while you still pass a **generic** that **extends** **`IRouteHandlerContext`** when middleware narrows **`context`** (e.g. **`withAuthMiddleware`** sets **`user`**). Example (**`app/api/me/route.ts`**):
+
+```ts
+import type { IAuthenticatedRouteHandlerContext } from "@/app/api/_shared/interfaces/authenticated-route-handler-context.interface";
+import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
+import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import { withAuthMiddleware } from "@/app/api/_shared/route-handlers/with-auth-route-middleware.util";
+import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import { IGetMeResponseDto } from "@/src/DTOs/me/get-me-response.dto";
+
+export const GET = createGlobalRouteHandler<IAuthenticatedRouteHandlerContext>(
+  async (_request, { user }) =>
+    sendResponse<IGetMeResponseDto>({ user: userMapper.toUserMe(user) }),
+  { middleware: [withAuthMiddleware] },
+);
+```
+
+Routes that use **`createRouteHandler` only** do not get the global error wrapper unless you add **`withRouteErrorHandler`** (or similar) to their `middleware` array yourself; see `@/app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util`.

@@ -1,0 +1,7 @@
+{
+  "Console Log with Removal Reminder": {
+    "prefix": "clr",
+    "body": ["console.log($1); // TODO: remove console.log"],
+    "description": "Console log with TODO reminder to remove it later",
+  },
+}

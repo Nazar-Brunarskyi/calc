@@ -2,14 +2,17 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 
 ## Documentation in this repo
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Where to put pages, shared `src/` code (`components`, `types`, `interfaces`, `constants`, `hooks`), path aliases, and **`lib/http`** route composition.
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Where to put pages, shared `src/` code (`components`, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`), path aliases, and **`lib/http`** route composition. **TanStack Query** covers **`useAppQuery`** and the shared hooks; **Front-end API error handling** (same file) walks through **`fetchApiJson` → `FetchApiError` → `useErrorHandler` / `useGlobalErrorHandlers`**, TanStack success vs error state, and how that relates to server **§4** JSON errors.
 - **[COMPONENT_MAP.md](./COMPONENT_MAP.md)** — Catalog of UI building blocks; check before adding new components.
-- **[lib/http/README.md](./lib/http/README.md)** — `createRouteHandler`, middleware chain, typing dynamic `params`.
-- **[lib/mongodb/README.md](./lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, Mongoose models, **`withMongoDbConnection`** middleware used with the HTTP helpers.
+- **[lib/http/README.md](./lib/http/README.md)** — `createRouteHandler`, middleware `next()` chain, typing dynamic `params`.
+- **[lib/mongodb/README.md](./lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, Mongoose models; **`withMongoDbConnection`** for routes lives under **`app/api/_shared/route-handlers/`** (see [lib/http/README.md](./lib/http/README.md)).
+- **Cursor Agent** — [`.cursor/rules/`](./.cursor/rules/) (project rules), [`.cursor/agents/`](./.cursor/agents/) (subagents; e.g. **`/doc-sync`** — see [`.cursor/agents/README.md`](./.cursor/agents/README.md)), and [`.cursor/skills/`](./.cursor/skills/) (e.g. **api-app-service**, **`/sync-repository-docs`** for doc sync without a subagent). Details in [ARCHITECTURE.md](./ARCHITECTURE.md) (Cursor Agent bullet in the App Router API section).
 
 ## API routes
 
-Example: **`GET /api/users/[id]`** loads a user by id (MongoDB). Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/src/global-route-handler.util` so MongoDB is connected before the handler runs (see `app/api/users/[id]/route.ts`).
+Example: **`GET /api/me`** returns the signed-in user (from the **`session_id`** cookie) or **401** when unauthenticated, using **`createGlobalRouteHandler`** with optional **`withAuthMiddleware`** so the session is resolved in middleware and **`user`** is on **`context`** (see `app/api/me/route.ts`). **`createGlobalRouteHandler`** also applies **`withRouteErrorHandler`** (structured JSON errors: **`error`**, optional **`error_code`**, optional **`snackbar`**) and **`withMongoDbConnection`** before your handler ([lib/http/README.md](./lib/http/README.md)).
+
+**Google OAuth** (`/api/auth/google`, callback under `/api/auth/google/callback`): on success the app persists or updates the user, creates a row in the **`sessions`** collection, and sets an httpOnly **`session_id`** cookie (see `.env.example` for **`OAUTH_SUCCESS_REDIRECT_PATH`**). Shared cookie name: `src/constants/session-id-cookie.const.ts`.
 
 ## Getting Started
 
