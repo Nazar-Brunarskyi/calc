@@ -1,4 +1,4 @@
-import { AuthProvider } from "@/src/features/auth/providers/auth-provider.component";
+import { AuthProvider } from "@/src/features/auth/providers/auth-provider/auth-provider.component";
 import { QueryClientProviderComponent } from "@/src/features/query/providers/query-client-provider.component";
 import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
 import type { Metadata } from "next";

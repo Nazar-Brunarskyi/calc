@@ -5,7 +5,9 @@ alwaysApply: true
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **`AuthProvider`** and **`useAuth`** live under **`src/features/auth/providers/`**; **`RequireAuthGate`** and **`withAuth`** live under **`src/features/auth/components/`**; **`QueryClientProviderComponent`** (TanStack Query) lives under **`src/features/query/providers/`**. Folder placement and other layout rules are in that doc.
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders).
+
+Under **`src/features/<feature>/components/`** and **`src/features/<feature>/providers/`**, use **one folder per** component or provider; the module file sits inside that folder (e.g. **`src/features/auth/providers/auth-provider/auth-provider.component.tsx`**, **`src/features/auth/components/require-auth-gate/require-auth-gate.component.tsx`**). **Higher-order components** live under **`src/features/<feature>/components/HOCS/<hoc-name>/`** (e.g. **`src/features/auth/components/HOCS/with-auth/with-auth.hoc.tsx`**). **`QueryClientProviderComponent`** (TanStack Query) lives under **`src/features/query/providers/`** (same one-folder-per-module pattern when multiple files exist there). Folder placement and other layout rules are in that doc.
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 

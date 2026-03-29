@@ -1,13 +1,6 @@
-import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
-import { redirect } from "next/navigation";
+import { withoutAuth } from "@/src/features/auth/components/HOCS/without-auth/without-auth.hoc";
 
-export default async function LoginPage() {
-  const user = await getCurrentUserForPage();
-
-  if (user !== null) {
-    redirect("/profile");
-  }
-
+const LoginPage = () => {
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center gap-6 p-8 font-sans">
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
@@ -21,4 +14,6 @@ export default async function LoginPage() {
       </a>
     </div>
   );
-}
+};
+
+export default withoutAuth(LoginPage);

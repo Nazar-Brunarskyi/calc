@@ -1,5 +1,5 @@
 "use client";
-import { useAuth } from "@/src/features/auth/providers/auth-provider.component";
+import { useAuth } from "@/src/features/auth/providers/auth-provider/auth-provider.component";
 
 export const ProfileView = () => {
   const { user } = useAuth();

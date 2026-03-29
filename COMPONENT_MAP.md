@@ -13,13 +13,14 @@ Reference for AI agents: **component name** → **path** from project root.
 | Component name | Path                                              |
 | -------------- | ------------------------------------------------- |
 | RootLayout       | app/layout.tsx                                                      |
-| RequireAuthGate  | src/features/auth/components/require-auth-gate.component.tsx        |
-| withAuth         | src/features/auth/components/with-auth.hoc.tsx                      |
+| RequireAuthGate  | src/features/auth/components/require-auth-gate/require-auth-gate.component.tsx |
+| withAuth         | src/features/auth/components/HOCS/with-auth/with-auth.hoc.tsx                 |
+| withoutAuth      | src/features/auth/components/HOCS/without-auth/without-auth.hoc.tsx          |
 | Home             | app/page.tsx                                                        |
 | LoginPage        | app/login/page.tsx                                                  |
 | ProfilePage      | app/profile/page.tsx                                                |
 | ProfileView      | app/profile/components/profile-view.component.tsx                 |
-| AuthProvider     | src/features/auth/providers/auth-provider.component.tsx             |
+| AuthProvider     | src/features/auth/providers/auth-provider/auth-provider.component.tsx             |
 | QueryClientProviderComponent | src/features/query/providers/query-client-provider.component.tsx |
 | ReactQueryDevtoolsLazy       | src/features/query/components/react-query-devtools-lazy.component.tsx |
 
