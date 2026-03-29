@@ -1,9 +1,8 @@
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
 import type { IRedirectResponseCookie } from "@/app/api/_shared/utils/redirect-response.util";
 import { SESSION_ID_COOKIE_NAME } from "@/src/constants/session-id-cookie.const";
-import type { ISnackbarArgs } from "@/src/features/error-handling/interfaces/snackbar-args.interface";
-
 import { APP_UNAUTHORIZED_ERROR_TYPES_ENUM } from "@/src/features/error-handling/enums/error-codes/app-unauthorized-error-codes.enum";
+import type { ISnackbarArgs } from "@/src/features/error-handling/interfaces/snackbar-args.interface";
 import { AppError } from "./app-error";
 
 interface IUnauthorizedErrorProps {

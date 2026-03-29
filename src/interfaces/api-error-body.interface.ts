@@ -5,4 +5,5 @@ export interface IApiErrorBody {
   error: string;
   error_code?: string;
   snackbar?: ISnackbarArgs;
+  error_context?: Record<string, unknown>;
 }

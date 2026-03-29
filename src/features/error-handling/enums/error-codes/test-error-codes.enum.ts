@@ -1,3 +1,0 @@
-export enum TEST_ERROR_TYPES_ENUM {
-  TEST_ERROR = "TEST_ERROR",
-}

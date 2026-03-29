@@ -1,7 +1,11 @@
+import type { IAppUser } from "@/app/api/_shared/interfaces/app-user.interface";
+
 /**
- * Matches the userland App Router handler context (second argument to GET/POST/…).
- * @see Next.js `AppRouteHandlerFnContext` (internal type in next/server route module).
+ * App Router route `context` fields this stack mutates or reads.
+ * `user` / `body` / `query` are set by middleware when used; omit them on routes that do not apply that middleware.
  */
 export interface IRouteHandlerContext {
-  params?: Promise<Record<string, string | string[] | undefined>>;
+  user?: IAppUser;
+  body?: unknown;
+  query?: unknown;
 }

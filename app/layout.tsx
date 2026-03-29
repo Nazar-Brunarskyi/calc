@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/src/features/auth/providers/auth-provider/auth-provider.component";
 import { QueryClientProviderComponent } from "@/src/features/query/providers/query-client-provider.component";
 import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
@@ -36,6 +37,7 @@ export default async function RootLayout({
         <QueryClientProviderComponent>
           <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
         </QueryClientProviderComponent>
+        <Toaster />
       </body>
     </html>
   );

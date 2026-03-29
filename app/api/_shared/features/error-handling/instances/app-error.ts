@@ -9,6 +9,7 @@ interface IAppErrorProps {
   error_code?: APP_ERROR_CODES_TYPE;
   snackbar?: ISnackbarArgs;
   cookies?: IRedirectResponseCookie[];
+  error_context?: Record<string, unknown>;
 }
 
 export class AppError extends Error {
@@ -17,6 +18,7 @@ export class AppError extends Error {
   readonly error_code?: APP_ERROR_CODES_TYPE;
   readonly snackbar?: ISnackbarArgs;
   readonly cookies?: IRedirectResponseCookie[];
+  readonly error_context?: Record<string, unknown>;
 
   constructor({
     message,
@@ -25,6 +27,7 @@ export class AppError extends Error {
     error_code,
     snackbar,
     cookies,
+    error_context,
   }: IAppErrorProps) {
     super(message);
     this.name = name ?? "app_error";
@@ -32,6 +35,7 @@ export class AppError extends Error {
     this.error_code = error_code;
     this.snackbar = snackbar;
     this.cookies = cookies;
+    this.error_context = error_context;
 
     Object.setPrototypeOf(this, new.target.prototype);
   }

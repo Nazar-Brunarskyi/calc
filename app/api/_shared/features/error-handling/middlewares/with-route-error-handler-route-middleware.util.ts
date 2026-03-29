@@ -24,6 +24,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
           error: appFields.message,
           error_code: appFields.error_code,
           snackbar: appFields.snackbar,
+          error_context: appFields.error_context,
         }),
         { status: appFields.statusCode },
       );

@@ -3,12 +3,14 @@ import { sessionRepository } from "@/app/api/_shared/repository/session/session.
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
 import { SESSION_ID_COOKIE_NAME } from "@/src/constants/session-id-cookie.const";
-import type { IAuthenticatedRouteHandlerContext } from "@/app/api/_shared/interfaces/authenticated-route-handler-context.interface";
+import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { NextRequest } from "next/server";
 
-export const withAuthMiddleware: TRouteMiddleware<
-  IAuthenticatedRouteHandlerContext
-> = async (request: NextRequest, context, next) => {
+export const withAuthMiddleware: TRouteMiddleware<IRouteHandlerContext> = async (
+  request: NextRequest,
+  context,
+  next,
+) => {
   const sessionId = request.cookies.get(SESSION_ID_COOKIE_NAME)?.value;
 
   if (sessionId === undefined) {

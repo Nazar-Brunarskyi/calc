@@ -10,14 +10,15 @@ Use in `app/**/route.ts` to compose **route middleware** around a handler (Expre
 
 Shared types (import paths use the `@/` alias):
 
-- `IRouteHandlerContext` — `@/lib/http/route-handler-context.interface` (base shape for the App Router handler `context` argument; use this name for default generics and middleware that only need optional `params`)
+- `IRouteHandlerContext` — `@/lib/http/route-handler-context.interface` (optional **`user`**, **`body`**, **`query`** for this stack’s middleware; narrow with a generic intersection when a route guarantees one of them is set)
+- `TNextAppRouteContext` — `@/lib/http/next-app-route-context.type` (**`params`** from Next.js); **`TRouteHandler`**, **`TRouteMiddleware`**, and **`TWrappedRouteHandler`** use **`TContext & TNextAppRouteContext`**, not **`params`** on **`IRouteHandlerContext`**
 - `TRouteMiddleware` — `@/lib/http/route-middleware.type`
 - `TRouteNext` — `@/lib/http/route-middleware.type`
 - `ICreateRouteHandlerProps` — `@/lib/http/create-route-handler.util` (optional `middleware` for `createRouteHandler` and `createGlobalRouteHandler`)
 - `TRouteHandler` / `TRouteHandlerReturn` — `@/lib/http/route-handler.type`
 - `TWrappedRouteHandler` — `@/lib/http/wrapped-route-handler.type`
 
-For dynamic segments, pass a narrower context (e.g. `interface ICtx { params: Promise<{ id: string }> }`) as the generic on `createRouteHandler` / `createGlobalRouteHandler` instead of `IRouteHandlerContext`.
+**`params`** is always present on the **`context`** argument at runtime (see **`TNextAppRouteContext`**). To **narrow** dynamic segments (e.g. **`id: string`**), intersect on the generic: `IRouteHandlerContext & { params: Promise<{ id: string }> }` (this overrides the default wide **`params`** typing for that route).
 
 Example:
 
@@ -35,12 +36,12 @@ export const POST = createRouteHandler(
 );
 ```
 
-Dynamic segment (narrow `params` in the generic or local interface):
+Dynamic segment (add **`params`** via intersection with **`IRouteHandlerContext`**):
 
 ```ts
-interface ICtx {
-  params: Promise<{ id: string }>;
-}
+import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
+
+type ICtx = IRouteHandlerContext & { params: Promise<{ id: string }> };
 
 export const GET = createRouteHandler<ICtx>(
   async (_req, ctx) => {
@@ -53,15 +54,13 @@ export const GET = createRouteHandler<ICtx>(
 
 ## `createGlobalRouteHandler` (MongoDB preset)
 
-When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with middleware order **`[withRouteErrorHandler, withMongoDbConnection, …props.middleware]`**: the error wrapper is **outermost** (runs first on the way in), then the MongoDB connection step, then any optional `middleware` you pass in props. On uncaught errors, **`withRouteErrorHandler`** returns **`NextResponse.json(jsonErrorBody(…), { status })`** (see `app/api/_shared/features/error-handling/`): thrown **`AppError`** and its subclasses (e.g. **`BadRequestError`**, **`NotFoundError`** in `instances/`), plus plain objects accepted by **`appErrorResponseService.getResponseFields`**, become a body with **`error`** (their message), optional **`error_code`**, optional **`snackbar`**, and their **`statusCode`**. Any other thrown **`Error`** or non-object value gets status **500** with **`error: "Internal Server Error"`** and **`error_code: "APP_LEVEL_UNKNOWN_ERROR"`** (**`APP_UNKNOWN_ERROR_TYPES_ENUM`**)—client responses do **not** include the original **`Error.message`** unless it went through **`AppError`** / recognized app-error shape. **`jsonErrorBody`** omits **`error_code`** and **`snackbar`** keys when those values are **`undefined`**. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
+When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with middleware order **`[withRouteErrorHandler, withMongoDbConnection, …props.middleware]`**: the error wrapper is **outermost** (runs first on the way in), then the MongoDB connection step, then any optional `middleware` you pass in props. On uncaught errors, **`withRouteErrorHandler`** returns **`NextResponse.json(jsonErrorBody(…), { status })`** (see `app/api/_shared/features/error-handling/`): thrown **`AppError`** and its subclasses (e.g. **`BadRequestError`**, **`NotFoundError`** in `instances/`), plus plain objects accepted by **`appErrorResponseService.getResponseFields`**, become a body with **`error`** (their message), optional **`error_code`**, optional **`snackbar`**, optional **`error_context`**, and their **`statusCode`**. Any other thrown **`Error`** or non-object value gets status **500** with **`error: "Internal Server Error"`** and **`error_code: "APP_LEVEL_UNKNOWN_ERROR"`** (**`APP_UNKNOWN_ERROR_TYPES_ENUM`**)—client responses do **not** include the original **`Error.message`** unless it went through **`AppError`** / recognized app-error shape. **`jsonErrorBody`** omits **`error_code`**, **`snackbar`**, and **`error_context`** keys when those values are **`undefined`**. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
 
 ```ts
-import type { NextRequest } from "next/server";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 
-interface ICtx {
-  params: Promise<{ id: string }>;
-}
+type ICtx = IRouteHandlerContext & { params: Promise<{ id: string }> };
 
 export const GET = createGlobalRouteHandler<ICtx>(async (_req, ctx) => {
   const { id } = await ctx.params;
@@ -72,14 +71,15 @@ export const GET = createGlobalRouteHandler<ICtx>(async (_req, ctx) => {
 **Typing and auth:** **`createGlobalRouteHandler`** is implemented with a cast so the **exported** route matches the App Router’s base **`context`** shape (**`IRouteHandlerContext`**), while you still pass a **generic** that **extends** **`IRouteHandlerContext`** when middleware narrows **`context`** (e.g. **`withAuthMiddleware`** sets **`user`**). Example (**`app/api/me/route.ts`**):
 
 ```ts
-import type { IAuthenticatedRouteHandlerContext } from "@/app/api/_shared/interfaces/authenticated-route-handler-context.interface";
+import type { IAppUser } from "@/app/api/_shared/interfaces/app-user.interface";
 import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
 import { withAuthMiddleware } from "@/app/api/_shared/route-handlers/with-auth-route-middleware.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import { IGetMeResponseDto } from "@/src/DTOs/me/get-me-response.dto";
 
-export const GET = createGlobalRouteHandler<IAuthenticatedRouteHandlerContext>(
+export const GET = createGlobalRouteHandler<IRouteHandlerContext & { user: IAppUser }>(
   async (_request, { user }) =>
     sendResponse<IGetMeResponseDto>({ user: userMapper.toUserMe(user) }),
   { middleware: [withAuthMiddleware] },
@@ -87,3 +87,28 @@ export const GET = createGlobalRouteHandler<IAuthenticatedRouteHandlerContext>(
 ```
 
 Routes that use **`createRouteHandler` only** do not get the global error wrapper unless you add **`withRouteErrorHandler`** (or similar) to their `middleware` array yourself; see `@/app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util`.
+
+## App API route middleware
+
+Use these with **`createRouteHandler`** or **`createGlobalRouteHandler`** via **`props.middleware`** (one function or an array). With **`createGlobalRouteHandler`**, your entries run **after** **`withMongoDbConnection`** (order: **`withRouteErrorHandler`** → **`withMongoDbConnection`** → **`…props.middleware`** → handler).
+
+**`app/api/_shared/route-handlers/`**
+
+| Middleware | Role |
+| --- | --- |
+| **`withAuthMiddleware`** | Resolves **`session_id`**, loads **`user`**, sets **`context.user`**, throws **`AppLevelUnauthorizedError`** (401) when unauthenticated. |
+
+**`app/api/_shared/features/zod-validations/middlewares/`** (Zod)
+
+| Middleware | Role |
+| --- | --- |
+| **`withValidatedBody(schema)`** | **`await request.json()`** once, then **`schema.safeParse`**. On success assigns **`context.body`**. If **`request.json()`** throws (invalid JSON / empty body where JSON is required), throws **`BadRequestError`** (**`"Invalid request"`**) — no Zod issues. If JSON parses but **Zod** fails, throws **`ValidationError`** (**`app/api/_shared/features/zod-validations/instances/validation-error.ts`**): HTTP **400**, **`error_code`** **`DATA_VALIDATION_ERROR`**, **`error_context.validation`** with **`IZodValidationFailure`** (**`issues`** from Zod). Use only on routes that expect a JSON body. |
+| **`withValidatedQuery(schema)`** | Builds a record from **`request.nextUrl.searchParams`**, **`schema.safeParse`**, assigns **`context.query`** on success; on Zod failure throws **`ValidationError`** (same **`error_code`** / **`error_context.validation`** shape as body validation). Duplicate query keys: last value wins (**`Object.fromEntries`**). |
+
+**Composition:** Put **auth** before **body** / **query** when all apply, e.g. **`middleware: [withAuthMiddleware, withValidatedBody(bodySchema)]`**. The handler must read **`context.body`** / **`context.query`** — do not call **`request.json()`** again after **`withValidatedBody`**.
+
+**Zod validation vs JSON errors:** Schema failures are **`ValidationError`** so the client can branch on **`error_code`** and read **`error_context.validation.issues`**. Malformed JSON on body routes stays **`BadRequestError`** without validation metadata. See [ARCHITECTURE.md](../ARCHITECTURE.md) §4 (**Zod validation errors**).
+
+**Typing:** Pass a generic on **`createGlobalRouteHandler`** that intersects **`IRouteHandlerContext`** with required fields your chain guarantees, e.g. **`IRouteHandlerContext & { user: IAppUser } & { body: YourRequestDto }`**. Align the Zod schema with **`src/DTOs/<domain>/*.dto.ts`** using **`const bodySchema: ZodType<IYourRequestDto> = z.object({ … })`**.
+
+**Example (auth + Zod body):** see **`app/api/test/body-validation/route.ts`**.
