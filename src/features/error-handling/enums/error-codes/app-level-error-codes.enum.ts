@@ -1,0 +1,3 @@
+export enum APP_LEVEL_ERROR_CODES_ENUM {
+  SHOW_TOAST = "SHOW_TOAST",
+}
