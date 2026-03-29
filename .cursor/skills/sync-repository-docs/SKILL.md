@@ -27,7 +27,7 @@ Align with (read before editing; do not contradict):
 | [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc) | Canonical standards; **“Project Markdown files”** for root `*.md` registry |
 | [COMPONENT_MAP.md](../../../COMPONENT_MAP.md) | UI catalog — update in the **same** change as catalogued components |
 | [db-schema.md](../../../db-schema.md) | MongoDB / Mongoose, `DB/*` |
-| [lib/http/README.md](../../../lib/http/README.md) | `createRouteHandler`, `createGlobalRouteHandler`, middleware |
+| [lib/http/README.md](../../../lib/http/README.md) | `createRouteHandler`, `createGlobalRouteHandler`, middleware **`next()`**, app middleware (**auth**, **Zod body/query**) |
 | [lib/mongodb/README.md](../../../lib/mongodb/README.md) | Connection, models (route middleware under `app/api/_shared/route-handlers/`) |
 | [.cursor/skills/api-app-service/SKILL.md](../api-app-service/SKILL.md) | Canonical API file-path table — update when those paths change |
 
