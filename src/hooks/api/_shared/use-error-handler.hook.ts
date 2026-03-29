@@ -17,7 +17,7 @@ export type TAsyncLazyFn<T> = () => Promise<T>;
 
 export type TWrapAsyncWithFetchErrorHandlers = <T>(
   fn: TAsyncLazyFn<T>,
-) => Promise<T | null>;
+) => TAsyncLazyFn<T | null>;
 
 export interface IUseErrorHandlerReturn {
   wrapFunction: TWrapAsyncWithFetchErrorHandlers;
@@ -29,7 +29,7 @@ export const useErrorHandler = ({
   errorHandlers = EMPTY_ERROR_HANDLERS,
 }: IUseErrorHandlerProps = {}): IUseErrorHandlerReturn => {
   const wrapFunction = useCallback<TWrapAsyncWithFetchErrorHandlers>(
-    async (fn) => {
+    (fn) => async () => {
       try {
         return await fn();
       } catch (error) {
@@ -40,11 +40,14 @@ export const useErrorHandler = ({
           const handler = errorHandlers.find(
             (h) => h.error_code === error.body?.error_code,
           );
+
           if (handler !== undefined) {
             handler.handler(error);
+
             return null;
           }
         }
+
         throw error;
       }
     },

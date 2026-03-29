@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 
 ## Documentation in this repo
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Where to put pages, shared `src/` code (`components`, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`), path aliases, and **`lib/http`** route composition.
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Where to put pages, shared `src/` code (`components`, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`), path aliases, and **`lib/http`** route composition. **TanStack Query** covers **`useAppQuery`** and the shared hooks; **Front-end API error handling** (same file) walks through **`fetchApiJson` → `FetchApiError` → `useErrorHandler` / `useGlobalErrorHandlers`**, TanStack success vs error state, and how that relates to server **§4** JSON errors.
 - **[COMPONENT_MAP.md](./COMPONENT_MAP.md)** — Catalog of UI building blocks; check before adding new components.
 - **[lib/http/README.md](./lib/http/README.md)** — `createRouteHandler`, middleware `next()` chain, typing dynamic `params`.
 - **[lib/mongodb/README.md](./lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, Mongoose models; **`withMongoDbConnection`** for routes lives under **`app/api/_shared/route-handlers/`** (see [lib/http/README.md](./lib/http/README.md)).

@@ -78,7 +78,7 @@ Code that is **reused across the app** but is not a React component belongs unde
 | `src/interfaces` | Shared declarations using the **`interface`** keyword: object shapes, contracts, and extendable API/domain shapes.                                            |
 | `src/DTOs`       | Shared **`interface`** shapes for **HTTP JSON** success bodies (and request payloads when shared) used by **`app/api/**`** and client code (e.g. TanStack Query). Colocate by domain: **`src/DTOs/<domain>/`**, files **`*.dto.ts`** (e.g. **`get-me-response.dto.ts`**). Compose fields from **`src/interfaces`** and mapper output; keep **mappers** in **`app/api/_shared/mappers/`** (they map DB → **`src/interfaces`**, not route-only envelopes). |
 | `src/constants`  | Shared **constants** (config keys, limits, labels used in multiple places, enum-like values). Avoid dumping unrelated literals in one file as the tree grows. |
-| `src/hooks`      | Shared **React hooks** (`use*` modules) used from more than one route or feature. **TanStack Query** hooks and API-domain **query key** factories live under **`src/hooks/api/<domain>/`** when you add them. Cross-domain API client helpers (e.g. **`FetchApiError`** handling) may live under **`src/hooks/api/_shared/`**. |
+| `src/hooks`      | Shared **React hooks** (`use*` modules) used from more than one route or feature. **TanStack Query** hooks and API-domain **query key** factories live under **`src/hooks/api/<domain>/`** when you add them. Cross-cutting API query helpers live under **`src/hooks/api/_shared/`**: **`useAppQuery`** (wraps **`useQuery`** + global error wrapping), **`useGlobalErrorHandlers`** / **`useErrorHandler`** (**`FetchApiError`** + **`error_code`** → handlers such as redirect on unauthorized). See **TanStack Query** below. |
 | `src/utils`      | Shared **non-hook** helpers (pure utilities, env readers, small parsers) used from more than one place. Prefer **kebab-case** and a **`.util.ts`** suffix (see [.cursor/rules/general.mdc](./.cursor/rules/general.mdc)). **Client** HTTP helpers for TanStack **`queryFn`** / **`mutationFn`** (e.g. **`fetch-api-json.util.ts`** — **`fetchApiJson`**, **`FetchApiError`**) live here. **Server-only** utilities belong under **`src/utils/server/`** (e.g. **`get-current-user-for-page.util.ts`**). |
 
 **`src/features/<feature>/`:** Optional **vertical slices** for app-wide code that belongs to a named product concern (not generic `src/components` / `src/utils`). Keep each feature self-contained under its folder. Use a **`providers/`** subfolder for **React context providers** (and their hooks when exported from the same module); use **`components/`** for other feature UI (gates, panels, etc.). Under **`components/`** and **`providers/`**, give **each** component or provider its **own** folder; the implementation file lives inside (e.g. **`auth-provider/auth-provider.component.tsx`**).
@@ -86,7 +86,7 @@ Code that is **reused across the app** but is not a React component belongs unde
 | Path                         | Purpose |
 | ---------------------------- | ------- |
 | `src/features/error-handling/` | Shared API error **enums**, **`ISnackbarArgs`**, and **`APP_ERROR_CODES_TYPE`** used with **`AppError`** / route error middleware (see §4). The HTTP error JSON shape **`IApiErrorBody`** is shared with the client via **`src/interfaces/api-error-body.interface.ts`** (**`jsonErrorBody`**, **`FetchApiError.body`**). |
-| `src/features/auth/`         | **`AuthProvider`** and **`useAuthContext`** in **`providers/auth-provider/auth-provider.component.tsx`** — loads **`/api/me`** with **`useMeQuery`** (**`src/hooks/api/user/use-me.query.hook.ts`**), syncs server **`initialUser`** into the TanStack cache, and exposes **`user`**, **`setUser`**, **`refetchUser`**; **`RequireAuthGate`** in **`components/require-auth-gate/require-auth-gate.component.tsx`**; **`withAuth`** in **`components/HOCS/with-auth/with-auth.hoc.tsx`**; **`withoutAuth`** in **`components/HOCS/without-auth/without-auth.hoc.tsx`**. The root **`app/layout.tsx`** wraps the tree with **`AuthProvider`** (passing server-resolved `initialUser`), nested inside **`QueryClientProviderComponent`** (see **`src/features/query/`**). Protected pages use **`export default withAuth(Page)`**; **`withAuth`** awaits **`getCurrentUserForPage`** from **`src/utils/server/get-current-user-for-page.util.ts`**, **`redirect("/login")`** when unauthenticated, and wraps the **page** in **`RequireAuthGate`**. Guest-only pages (e.g. login) use **`export default withoutAuth(Page)`**; **`withoutAuth`** awaits the same helper and **`redirect("/profile")`** when authenticated. Import providers from **`@/src/features/auth/providers/<name>/...`**; gates from **`@/src/features/auth/components/<name>/...`**; HOCs from **`@/src/features/auth/components/HOCS/<name>/...`**. |
+| `src/features/auth/`         | **`AuthProvider`** and **`useAuthContext`** in **`providers/auth-provider/auth-provider.component.tsx`** — loads **`/api/me`** with **`useMeQuery`** (**`src/hooks/api/user/use-me.query.hook.ts`**, built on **`useAppQuery`** so **`FetchApiError`** with **`APP_LEVEL_UNAUTHORIZED`** triggers client **`replace("/login")`** via **`useGlobalErrorHandlers`**), syncs server **`initialUser`** into the TanStack cache, and exposes **`user`**, **`setUser`**, **`refetchUser`**; **`RequireAuthGate`** in **`components/require-auth-gate/require-auth-gate.component.tsx`**; **`withAuth`** in **`components/HOCS/with-auth/with-auth.hoc.tsx`**; **`withoutAuth`** in **`components/HOCS/without-auth/without-auth.hoc.tsx`**. The root **`app/layout.tsx`** wraps the tree with **`AuthProvider`** (passing server-resolved `initialUser`), nested inside **`QueryClientProviderComponent`** (see **`src/features/query/`**). Protected pages use **`export default withAuth(Page)`**; **`withAuth`** awaits **`getCurrentUserForPage`** from **`src/utils/server/get-current-user-for-page.util.ts`**, **`redirect("/login")`** when unauthenticated, and wraps the **page** in **`RequireAuthGate`**. Guest-only pages (e.g. login) use **`export default withoutAuth(Page)`**; **`withoutAuth`** awaits the same helper and **`redirect("/profile")`** when authenticated. Import providers from **`@/src/features/auth/providers/<name>/...`**; gates from **`@/src/features/auth/components/<name>/...`**; HOCs from **`@/src/features/auth/components/HOCS/<name>/...`**. |
 | `src/features/user/`         | **`useUser`** in **`hooks/use-user.hook.ts`**: returns **`IUserMe | null`** from **`useAuthContext`**. Import from **`@/src/features/user/hooks/use-user.hook`**. |
 | `src/features/query/`        | **`QueryClientProviderComponent`** in **`providers/query-client-provider.component.tsx`**: wraps the app with **`QueryClientProvider`** from **`@tanstack/react-query`**. **`ReactQueryDevtoolsLazy`** in **`components/react-query-devtools-lazy.component.tsx`** loads **React Query Devtools** via **`next/dynamic`** (no SSR) in development only. Hooks that call **`useQuery`** / **`useMutation`** live under **`src/hooks/api/<domain>/`**, not in this folder. |
 
@@ -112,6 +112,7 @@ src/
   hooks/
     api/                    # TanStack Query: one folder per API domain (+ optional _shared/)
       _shared/
+        use-app-query.hook.ts
         use-error-handler.hook.ts
         use-global-error-handlers.hook.ts
       user/
@@ -144,7 +145,58 @@ The app uses [**TanStack Query**](https://tanstack.com/query) (**`@tanstack/reac
 - **Devtools:** **`ReactQueryDevtoolsLazy`** — **`src/features/query/components/react-query-devtools-lazy.component.tsx`** (dynamic import, development only).
 - **Hooks and keys:** Put **`useQuery`** / **`useMutation`** wrappers in **`src/hooks/api/<domain>/`** using **`*.hook.ts`** (e.g. **`use-user.query.hook.ts`**, **`use-update-profile.mutation.hook.ts`**). Colocate **query key factories** in the same domain folder as **`*.query-keys.const.ts`** (exception: keys are domain-scoped, not generic **`src/constants`**).
 - **Consumers:** Hooks run in **client** components (`"use client"`). Server Components stay async/RSC unless you add prefetch + hydration later.
-- **Fetching:** Prefer **`fetchApiJson`** and **`FetchApiError`** from **`src/utils/fetch-api-json.util.ts`** in **`queryFn`** / **`mutationFn`** for typed JSON and **`credentials: "include"`** on **`/api/**`**. Handle route-specific status semantics in the **domain hook** (e.g. **401** → **`null`** for **`/api/me`** in **`use-me.query.hook.ts`**), not inside **`fetchApiJson`**. Reuse **`src/interfaces`** and **`src/DTOs`** for bodies.
+- **Fetching:** Prefer **`fetchApiJson`** and **`FetchApiError`** from **`src/utils/fetch-api-json.util.ts`** in **`queryFn`** / **`mutationFn`** for typed JSON and **`credentials: "include"`** on **`/api/**`**. Non-OK responses throw **`FetchApiError`** with **`body`** shaped as **`IApiErrorBody`** (optional **`error_code`**, **`snackbar`**, etc.). Do not move that into **`fetchApiJson`**; keep **`fetchApiJson`** a thin transport layer. Reuse **`src/interfaces`** and **`src/DTOs`** for success bodies.
+- **`useAppQuery`** (**`src/hooks/api/_shared/use-app-query.hook.ts`**): Use this instead of calling **`useQuery`** directly for **read** hooks that hit **`/api/**`**. It forwards options to **`useQuery`** with **`retry: false`** and wraps **`queryFn`** using **`useGlobalErrorHandlers().wrapFunction`**. When the inner **`queryFn`** throws **`FetchApiError`** and **`error.body.error_code`** matches a registered handler, that handler runs and the wrapped **`queryFn`** returns **`null`** (query succeeds with **`data: null`**) instead of leaving the query in **error** state. Unmatched **`FetchApiError`** and other errors still propagate.
+- **`useGlobalErrorHandlers`** (**`src/hooks/api/_shared/use-global-error-handlers.hook.ts`**): Client hook that registers app-wide **`FetchApiError`** handlers via **`useErrorHandler`**. Today this includes **`APP_LEVEL_UNAUTHORIZED`** → **`router.replace("/login")`** (see **`APP_UNAUTHORIZED_ERROR_TYPES_ENUM`**). Extend this module when new **global** client reactions to **`error_code`** are needed.
+- **`useErrorHandler`** (**`src/hooks/api/_shared/use-error-handler.hook.ts`**): Returns **`wrapFunction`**, which adapts a **`() => Promise<T>`** so **`FetchApiError`** with a matching **`error_code`** in **`errorHandlers`** runs the paired **`handler`** and yields **`null`**; otherwise the error rethrows. **`useGlobalErrorHandlers`** is the usual composition; use **`useErrorHandler`** directly only for localized or experimental handler lists (not duplicated in globals).
+- **Example — current user:** **`useMeQuery`** (**`src/hooks/api/user/use-me.query.hook.ts`**) calls **`fetchApiJson`** for **`GET /api/me`**. On **401**, the API returns JSON with **`APP_LEVEL_UNAUTHORIZED`**; **`fetchApiJson`** throws **`FetchApiError`**; the **`useAppQuery`** wrapper runs the global handler → **`replace("/login")`** and **`null`** data. **`AuthProvider`** uses **`useMeQuery({ initialUser })`** and syncs **`initialUser`** / **`userQueryKeys.me()`** with **`setQueryData`** so RSC-passed user and client refetch stay aligned.
+
+**Mutations:** There is no **`useAppMutation`** yet; **`mutationFn`** can still use **`fetchApiJson`**. If mutations need the same **`error_code`** → redirect (or snackbar) behavior, either call **`useGlobalErrorHandlers`**’ **`wrapFunction`** around the mutation function or add a shared mutation wrapper later.
+
+### Front-end API error handling
+
+Client code does not read HTTP status alone for branching; it relies on **`fetchApiJson`** throwing **`FetchApiError`** and optional **`error_code`**-driven handlers. This matches the JSON error contract produced on the server (**`withRouteErrorHandler`** / **`jsonErrorBody`** — see **§4**).
+
+**1. Error JSON on the wire**
+
+Failed **`/api/**`** responses are JSON objects shaped as **`IApiErrorBody`** (**`src/interfaces/api-error-body.interface.ts`**): required **`error`** (string), optional **`error_code`** (string, aligned with **`APP_ERROR_CODES_TYPE`** from **`src/features/error-handling/enums/error-codes`**), optional **`snackbar`** (**`ISnackbarArgs`**). The same types are used when building responses in **`app/api`**.
+
+**2. `fetchApiJson`**
+
+**`src/utils/fetch-api-json.util.ts`** — **`fetchApiJson`** uses **`credentials: "include"`**. If **`!response.ok`**, it parses the body as **`IApiErrorBody`** (or falls back to a generic unknown-error shape if JSON parse fails) and throws **`FetchApiError`** with **`statusCode`** and **`body`**. Success paths return the parsed JSON typed by the caller. **`fetchApiJson`** does not catch or remap errors beyond that; all client reactions live in hooks or explicit **`try` / `catch`**.
+
+**3. `useErrorHandler` → `wrapFunction`**
+
+**`useErrorHandler`** (**`src/hooks/api/_shared/use-error-handler.hook.ts`**) accepts **`errorHandlers`**: **`{ error_code, handler }[]`** where **`error_code`** is **`APP_ERROR_CODES_TYPE`** and **`handler`** is **`(error: Error) => void`**.
+
+For a wrapped async function **`() => Promise<T>`**:
+
+- If the promise rejects with **`FetchApiError`** and **`error.body?.error_code`** is defined, the hook looks up a handler with the same **`error_code`**. If one exists, it runs **`handler(error)`** and the wrapper **resolves** with **`null`** (type becomes **`T | null`**). The rejection is **not** propagated.
+- If there is no matching handler, or the error is not a **`FetchApiError`** with **`error_code`**, the error is **rethrown** unchanged.
+
+So **`error_code`** is the discriminator for “handled globally” behavior; everything else still surfaces as a thrown error (e.g. TanStack Query **`isError`**).
+
+**4. `useGlobalErrorHandlers`**
+
+Registers the app-wide **`errorHandlers`** list (currently **`APP_LEVEL_UNAUTHORIZED`** → **`router.replace("/login")`**). **`useAppQuery`** always wraps **`queryFn`** with this **`wrapFunction`**, so any **`useAppQuery`**-based read that throws that **`FetchApiError`** triggers the redirect and ends with **`data: null`** instead of an error state.
+
+**5. TanStack Query observable state**
+
+| Outcome | Typical query state |
+| ------- | ------------------- |
+| Success, no throw | **`isSuccess`**, **`data`** as returned |
+| **`FetchApiError`** + matched **`error_code`** | **`isSuccess`**, **`data: null`** (handler ran — e.g. navigation) |
+| **`FetchApiError`** + no matching handler, or other **`Error`** | **`isError`**, **`error`** set |
+
+**`retry: false`** on **`useAppQuery`** avoids repeating failed requests while redirects or toasts run.
+
+**6. Mutations and one-off fetches**
+
+**`useMutation`** does not go through **`useAppQuery`**. Wrap **`mutationFn`** with **`useGlobalErrorHandlers().wrapFunction`** (or **`useErrorHandler({ errorHandlers: [...] })`**) when you want the same **`error_code`** behavior, or use **`try` / `catch`** / **`onError`** for local handling only.
+
+**7. Server vs browser**
+
+**Server Components** and layout helpers (e.g. **`getCurrentUserForPage`**) use **redirects** and cookies directly — they do not use **`fetchApiJson`** or these hooks. The pipeline above applies to **client** **`fetch`** + TanStack Query (and any other caller of **`fetchApiJson`** in **`"use client"`** code).
 
 ### Path aliases
 

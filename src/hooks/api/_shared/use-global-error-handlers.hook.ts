@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export const useGlobalErrorHandlers = () => {
   const { replace } = useRouter();
 
-  return useErrorHandler({
+  const { wrapFunction } = useErrorHandler({
     errorHandlers: [
       {
         error_code: APP_UNAUTHORIZED_ERROR_TYPES_ENUM.APP_LEVEL_UNAUTHORIZED,
@@ -17,4 +17,6 @@ export const useGlobalErrorHandlers = () => {
       },
     ],
   });
+
+  return { wrapFunction };
 };
