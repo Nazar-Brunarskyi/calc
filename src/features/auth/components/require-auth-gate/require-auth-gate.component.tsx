@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/src/features/auth/providers/auth-provider/auth-provider.component";
+import { useUser } from "@/src/features/user/hooks/use-user.hook";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
@@ -9,7 +9,7 @@ interface IProps {
 }
 
 export const RequireAuthGate = ({ children }: IProps) => {
-  const { user } = useAuth();
+  const user = useUser();
   const router = useRouter();
 
   useEffect(() => {

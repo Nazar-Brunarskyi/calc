@@ -45,10 +45,10 @@ export const AuthProvider = ({ children, initialUser }: IAuthProviderProps) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): IAuthContextValue => {
+export const useAuthContext = (): IAuthContextValue => {
   const ctx = useContext(AuthContext);
   if (ctx === null) {
-    throw new Error("useAuth must be used within AuthProvider");
+    throw new Error("useAuthContext must be used within AuthProvider");
   }
   return ctx;
 };

@@ -1,8 +1,9 @@
 "use client";
-import { useAuth } from "@/src/features/auth/providers/auth-provider/auth-provider.component";
+
+import { useUser } from "@/src/features/user/hooks/use-user.hook";
 
 export const ProfileView = () => {
-  const { user } = useAuth();
+  const user = useUser();
 
   if (user === null) {
     return null;
