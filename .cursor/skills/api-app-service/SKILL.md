@@ -1,15 +1,15 @@
 ---
 name: api-app-service
 description: >-
-  Adds or changes App Router API services and repositories under app/api/_shared
+  Adds or changes App Router API services, repositories, and mappers under app/api/_shared
   and provider-specific app/api/**/_service. Covers export object pattern (authService,
-  tryCatchService, userRepository, sessionRepository), thin route.ts handlers, and MongoDB via
+  tryCatchService, userRepository, sessionRepository, userMapper), thin route.ts handlers, and MongoDB via
   createGlobalRouteHandler. Use when implementing API auth flows, new OAuth providers,
-  user persistence from routes, or when the user mentions app/api/_shared, _service
-  folder, or repository folder for Next.js API routes.
+  user persistence from routes, shaping DB documents to DTOs (mappers, userMapper), or when the user mentions
+  app/api/_shared, _service folder, repository folder, or mappers for Next.js API routes.
 ---
 
-# App Router API — service and repository layer
+# App Router API — services, repositories, and mappers
 
 ## What Cursor skills are
 
@@ -26,13 +26,14 @@ Use this workflow when:
 - Adding **shared HTTP/auth helpers** used by multiple providers (redirects, cookies).
 - Using **`tryCatchService.runSync` / `runAsync`** for const-friendly steps that map any throw to `null`.
 - Refactoring existing API handlers to match the project’s **object export** pattern.
+- Shaping **Mongoose / DB documents** into DTOs or API-layer types — add or extend **`*.mapper.ts`** under **`app/api/_shared/mappers/`**.
 
 ## Canonical references (read these)
 
 | Doc / code                                                                                                                 | Why                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/services`, `_shared/utils`, `auth/<provider>/_service`. |
-| [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc)                                                            | Arrow-only functions, `I*Props`, `no any`, service object exports.                 |
+| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/mappers`, `_shared/services`, `_shared/utils`, `auth/<provider>/_service`. |
+| [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc)                                                            | Arrow-only functions, `I*Props`, `no any`, service / repository / mapper object exports.                 |
 | [lib/http/README.md](../../../lib/http/README.md)                                                                          | `createRouteHandler`, middleware `next()`.                                         |
 | [app/api/\_shared/route-handlers/global-route-handler.util.ts](../../../app/api/_shared/route-handlers/global-route-handler.util.ts) | Preset: composes `createRouteHandler` with **`withRouteErrorHandler`** + **`withMongoDbConnection`** + optional **`props.middleware`**; exported handler typed as **`TWrappedRouteHandler<IRouteHandlerContext>`** with a generic on **`createGlobalRouteHandler`** for extended **`context`** (see **`lib/http/README.md`**). |
 | [app/api/\_shared/route-handlers/with-auth-route-middleware.util.ts](../../../app/api/_shared/route-handlers/with-auth-route-middleware.util.ts) | **`withAuthMiddleware`** — reads **`session_id`**, **`sessionRepository`** + **`userRepository`**, sets **`context.user`**, throws **`AppLevelUnauthorizedError`** when unauthenticated. |
@@ -50,6 +51,7 @@ Use this workflow when:
 | [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | **`authService.buildOauthRedirect`** — optional **`extraCookies`** alongside cleared OAuth state cookie. |
 | [app/api/\_shared/services/try-catch/try-catch.service.ts](../../../app/api/_shared/services/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
 | [app/api/\_shared/repository/user/user.repository.ts](../../../app/api/_shared/repository/user/user.repository.ts)         | Example: `export const userRepository = { … }`.                                    |
+| [app/api/\_shared/mappers/user.mapper.ts](../../../app/api/_shared/mappers/user.mapper.ts)                                 | Example: `export const userMapper = { toAppUser, toUserMe }` — DB / **`IAppUser`** / **`src/interfaces`** DTOs. |
 | [app/api/\_shared/repository/session/session.repository.ts](../../../app/api/_shared/repository/session/session.repository.ts) | Example: `export const sessionRepository = { createSessionForUser }`; **`SESSION_MAX_AGE_SECONDS`** for cookie **`maxAge`**. |
 | [app/api/\_shared/utils/redirect-response.util.ts](../../../app/api/_shared/utils/redirect-response.util.ts)                 | **`redirectResponse`** — `NextResponse.redirect` plus optional cookie sets (used by `authService` and provider flows). |
 | [app/api/auth/google/\_service/google-oauth.service.ts](../../../app/api/auth/google/_service/google-oauth.service.ts)        | Example: provider orchestration + `googleOAuthService`.                            |
@@ -60,15 +62,19 @@ Use this workflow when:
    - Only **Mongoose / DB** calls for that entity needed by API routes.
    - Export: `export const userRepository = { methodA, methodB }`.
 
-2. **Shared service** — `app/api/_shared/services/<domain>/<domain>.service.ts` (e.g. `auth/auth.service.ts`, `try-catch/try-catch.service.ts`)
+2. **Mapper** — `app/api/_shared/mappers/<entity>.mapper.ts`
+   - Pure **mapping** between persistence types, `app/api/_shared/interfaces`, and `src/interfaces` DTOs (no DB I/O).
+   - Export: `export const userMapper = { toAppUser, toUserMe }` (name methods by intent, often `to*`).
+
+3. **Shared service** — `app/api/_shared/services/<domain>/<domain>.service.ts` (e.g. `auth/auth.service.ts`, `try-catch/try-catch.service.ts`)
    - Logic **reused across providers** (redirect + cookie clearing, try/catch → `null` for uniform error branches).
    - Export: `export const authService = { … }`, `export const tryCatchService = { runSync, runAsync }`.
 
-3. **Provider service** — `app/api/auth/<provider>/_service/<provider>-oauth.service.ts` (underscore folder keeps the segment out of the URL path)
+4. **Provider service** — `app/api/auth/<provider>/_service/<provider>-oauth.service.ts` (underscore folder keeps the segment out of the URL path)
    - **One provider’s** flow (env, tokens, profile, call repository + shared `authService` / `redirectResponse`).
    - Export: `export const googleOAuthService = { readGoogleOauthEnv, createAuthorizeGoogleRedirect, handleGoogleOAuthCallback }` (adjust names per provider).
 
-4. **Route handler** — `app/api/**/route.ts`
+5. **Route handler** — `app/api/**/route.ts`
    - Stay **thin**: `createRouteHandler` or `createGlobalRouteHandler`; call `<provider>Service.method(request)` or similar.
    - No business logic or direct `getUserModel` if a repository already exists for that entity.
 
@@ -76,9 +82,9 @@ Use this workflow when:
 
 - [ ] **Arrow functions only** — no `function` keyword; destructure props in the signature: `const foo = ({ a, b }: IFooProps) => { … }` (not `props` + `const { … } = props`).
 - [ ] **Multi-arg** → single object + **`I` + PascalCase + `Props`**.
-- [ ] **Primary export** is **`export const <name>Service` or `userRepository`** with methods as properties; internal helpers stay unexported `const` arrows.
+- [ ] **Primary export** is **`export const <name>Service`**, **`userRepository`**, or **`userMapper`** (or **`<entity>Mapper`**) with methods as properties; internal helpers stay unexported `const` arrows.
 - [ ] Prefer **`tryCatchService.runSync` / `runAsync`** for steps where failure is handled the same way (e.g. redirect); use explicit **`try` / `catch`** when logging or inspecting `error`.
-- [ ] **`/** PRIVATE */`:** only on module-level `const`helpers **not** listed on the exported`*Service`/`userRepository`object; **no** other descriptive`/\*_ … _/`on implementation`const`s in those modules.
+- [ ] **`/** PRIVATE */`:** only on module-level `const`helpers **not** listed on the exported`*Service`/`userRepository`/`*Mapper`object; **no** other descriptive`/\*_ … _/`on implementation`const`s in those modules.
 - [ ] **Imports** use `@/app/api/...` paths.
 - [ ] **Types**: keep `interface` in the same file until shared app-wide; then `src/interfaces` per ARCHITECTURE.
 - [ ] **Update** [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5 if you introduce a **new top-level pattern** or folder.
@@ -88,6 +94,7 @@ Use this workflow when:
 
 ```typescript
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
 import { sessionRepository } from "@/app/api/_shared/repository/session/session.repository";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
 import { googleOAuthService } from "@/app/api/auth/google/_service/google-oauth.service";

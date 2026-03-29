@@ -23,7 +23,7 @@ export const withAuthMiddleware: TRouteMiddleware<
     throw new AppLevelUnauthorizedError();
   }
 
-  const user = await userRepository.getMe({
+  const user = await userRepository.getAppUserById({
     id: session.userId,
   });
 

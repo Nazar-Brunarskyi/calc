@@ -1,10 +1,11 @@
-import { randomBytes } from "crypto";
-import type { Model } from "mongoose";
-import mongoose from "mongoose";
-
+import type { IAppUser } from "@/app/api/_shared/interfaces/app-user.interface";
+import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
 import type { IUserMe } from "@/src/interfaces/user-me.interface";
+import { randomBytes } from "crypto";
 import { getUserModel } from "DB/schemas";
 import type { IUserSchema } from "DB/schemas/user";
+import type { Model } from "mongoose";
+import mongoose from "mongoose";
 
 export interface IFindOrCreateGoogleUserProps {
   googleSub: string;
@@ -13,6 +14,10 @@ export interface IFindOrCreateGoogleUserProps {
 }
 
 export interface IGetMeProps {
+  id: string;
+}
+
+interface IGetAppUserByIdProps {
   id: string;
 }
 
@@ -108,7 +113,9 @@ const findOrCreateGoogleUser = async ({
   }
 };
 
-const getMe = async ({ id }: IGetMeProps): Promise<IUserMe | null> => {
+const getAppUserById = async ({
+  id,
+}: IGetAppUserByIdProps): Promise<IAppUser | null> => {
   const User = getUserModel(mongoose);
   const doc = await User.findById(id).lean();
 
@@ -116,12 +123,20 @@ const getMe = async ({ id }: IGetMeProps): Promise<IUserMe | null> => {
     return null;
   }
 
-  return {
-    username: doc.username,
-  };
+  return userMapper.toAppUser(doc);
+};
+
+const getMe = async ({ id }: IGetMeProps): Promise<IUserMe | null> => {
+  const user = await getAppUserById({ id });
+
+  if (user === null) {
+    return null;
+  }
+  return userMapper.toUserMe(user);
 };
 
 export const userRepository = {
   findOrCreateGoogleUser,
+  getAppUserById,
   getMe,
 };

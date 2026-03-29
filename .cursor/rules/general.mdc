@@ -1,5 +1,5 @@
 ---
-description: General TypeScript standards — API services/repositories export a single object (`authService`, `tryCatchService`, `userRepository`); TanStack Query under `src/features/query/providers/` and `src/hooks/api/<domain>/`; arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
+description: General TypeScript standards — API services/repositories/mappers export a single object (`authService`, `tryCatchService`, `userRepository`, `userMapper`); TanStack Query under `src/features/query/providers/` and `src/hooks/api/<domain>/`; arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
 alwaysApply: true
 ---
 
@@ -25,7 +25,7 @@ Every `*.md` in the repo (add new docs here when you add files):
 - **[lib/mongodb/README.md](../../lib/mongodb/README.md)** — `MONGODB_URI`, `connectMongoDb`, models; **`withMongoDbConnection`** is documented there but implemented under **`app/api/_shared/route-handlers/`** (use with `createRouteHandler` per [lib/http/README.md](../../lib/http/README.md)).
 - **[AGENTS.md](../../AGENTS.md)** — Next.js version note for agents: this tree may differ from public docs; read `node_modules/next/dist/docs/` and heed deprecations.
 - **[CLAUDE.md](../../CLAUDE.md)** — Entry that points tooling at **AGENTS.md** so the same agent rules apply.
-- **[.cursor/skills/](../../.cursor/skills/)** — Optional Cursor Agent Skills (`SKILL.md` per folder); see [api-app-service](../../.cursor/skills/api-app-service/SKILL.md) for App Router API service/repository workflow.
+- **[.cursor/skills/](../../.cursor/skills/)** — Optional Cursor Agent Skills (`SKILL.md` per folder); see [api-app-service](../../.cursor/skills/api-app-service/SKILL.md) for App Router API services, repositories, and mappers workflow.
 
 ## Module filename suffixes (kebab-case + role)
 
@@ -39,6 +39,7 @@ Use **kebab-case** for the base name, then a **dot-suffix** before the extension
 | Enum module | `name-name.enum.ts` | `order-status.enum.ts` |
 | Constants | `name-name.const.ts` | `routes.const.ts` |
 | Pure helpers / utilities (non-hook functions) | `name-name.util.ts` | `class-names.util.ts` |
+| API mapper (DTO / shape transforms under `app/api/_shared/mappers/`) | `name-name.mapper.ts` | `user.mapper.ts` |
 | Hook module | `name-name.hook.ts` | `use-media-query.hook.ts` |
 
 Use **`.tsx`** for React component files that contain JSX (not `.ts`). Apply the same idea for other single-purpose modules when adding new roles. **Do not** use a bare `name-name.ts` for new files when one of the roles above fits.
@@ -69,13 +70,15 @@ export const loadUser = async (id: string): Promise<IUser | null> => {
 };
 ```
 
-## App Router API — service and repository exports
+## App Router API — service, repository, and mapper exports
 
-For modules under **`app/api/_shared/services/`**, **`app/api/_shared/repository/`**, and **`app/api/**/service/`** (provider-specific), export **one object** per file as the main callable API. Use **`camelCase`** names: `authService`, `tryCatchService`, `userRepository`, `googleOAuthService`. Callers import that object and invoke methods (e.g. `authService.buildOauthRedirect(props)`).
+For modules under **`app/api/_shared/services/`**, **`app/api/_shared/repository/`**, **`app/api/_shared/mappers/`**, and **`app/api/**/service/`** (provider-specific), export **one object** per file as the main callable API. Use **`camelCase`** names: `authService`, `tryCatchService`, `userRepository`, `userMapper`, `googleOAuthService`. Callers import that object and invoke methods (e.g. `authService.buildOauthRedirect(props)`, `userMapper.toUserMe(user)`).
+
+**Mappers** are **pure transforms** between persistence/schema types, **`app/api/_shared/interfaces`**, and **`src/interfaces`** DTOs — no DB I/O. One file per concern (e.g. **`user.mapper.ts`** → **`userMapper`**); add **`<entity>.mapper.ts`** when another entity needs mapping.
 
 - Keep **types** (`interface` / shared props) exported from the same file when they are API-layer only; promote to `src/interfaces` when shared more broadly (see [ARCHITECTURE.md](../../ARCHITECTURE.md) §5).
 - **Do not** rely on many separate exported function names as the primary pattern for these layers — the object groups the module’s public surface.
-- **Private helpers (service/repository modules):** A **private** helper is a module-level `const` that does **not** appear as a key on **`export const authService` / `tryCatchService` / `userRepository` / `googleOAuthService` / …**. Mark those **only** with:
+- **Private helpers (service / repository / mapper modules):** A **private** helper is a module-level `const` that does **not** appear as a key on **`export const authService` / `tryCatchService` / `userRepository` / `userMapper` / `googleOAuthService` / …**. Mark those **only** with:
   ```ts
   /**
    * PRIVATE
@@ -104,6 +107,13 @@ export const authService = {
 import { authService } from "@/app/api/_shared/services/auth/auth.service";
 
 authService.buildOauthRedirect({ request, path, query, stateCookieName });
+```
+
+```typescript
+import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
+
+userMapper.toAppUser(doc);
+userMapper.toUserMe(appUser);
 ```
 
 **`tryCatchService`** ([`app/api/_shared/services/try-catch/try-catch.service.ts`](../../app/api/_shared/services/try-catch/try-catch.service.ts)): shared **`runSync`** / **`runAsync`** wrappers that return **`null`** on any throw so callers can use **`const`** + null checks instead of `let` + try/catch assignment. Use for API orchestration when errors are handled uniformly (e.g. redirect with a code). Do **not** use when you need **`catch (error)`** for logging or typed error handling — keep an explicit `try` / `catch` there.
