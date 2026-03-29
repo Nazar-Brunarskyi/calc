@@ -1,11 +1,11 @@
 ---
-description: General TypeScript standards — API services/repositories export a single object (`authService`, `tryCatchService`, `userRepository`); arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
+description: General TypeScript standards — API services/repositories export a single object (`authService`, `tryCatchService`, `userRepository`); TanStack Query under `src/features/query/providers/` and `src/hooks/api/<domain>/`; arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
 alwaysApply: true
 ---
 
 # General coding standards
 
-For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **`AuthProvider`** and **`useAuth`** live under **`src/features/auth/providers/`**; **`RequireAuthGate`** and **`withAuth`** live under **`src/features/auth/components/`**. Folder placement and other layout rules are in that doc.
+For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders). **`AuthProvider`** and **`useAuth`** live under **`src/features/auth/providers/`**; **`RequireAuthGate`** and **`withAuth`** live under **`src/features/auth/components/`**; **`QueryClientProviderComponent`** (TanStack Query) lives under **`src/features/query/providers/`**. Folder placement and other layout rules are in that doc.
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 
@@ -16,7 +16,7 @@ For reusable libraries under `lib/`, prefer a local `README.md` when usage is no
 Every `*.md` in the repo (add new docs here when you add files):
 
 - **[README.md](../../README.md)** — Project overview, stack, dev server, and links into the other root docs.
-- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `constants`, `hooks`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `constants`, `hooks`, `hooks/api/<domain>/`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
 - **[COMPONENT_MAP.md](../../COMPONENT_MAP.md)** — Catalog of UI components (name → path); check before new UI; update in the same change when the catalog changes.
 - **[db-schema.md](../../db-schema.md)** — MongoDB/Mongoose schema reference per entity, `ISchemaDefinition`, collections/models, and the `DB/*` import alias.
 - **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware **`next()`** / order / short-circuit, shared route types, typing dynamic `params`.
@@ -40,6 +40,13 @@ Use **kebab-case** for the base name, then a **dot-suffix** before the extension
 | Hook module | `name-name.hook.ts` | `use-media-query.hook.ts` |
 
 Use **`.tsx`** for React component files that contain JSX (not `.ts`). Apply the same idea for other single-purpose modules when adding new roles. **Do not** use a bare `name-name.ts` for new files when one of the roles above fits.
+
+## TanStack Query (`@tanstack/react-query`)
+
+- **Provider:** **`QueryClientProviderComponent`** in **`src/features/query/providers/query-client-provider.component.tsx`**. Root layout nests **`AuthProvider`** inside it (see [ARCHITECTURE.md](../../ARCHITECTURE.md) — **TanStack Query**).
+- **Hooks:** Add **`useQuery`** / **`useMutation`** wrappers under **`src/hooks/api/<domain>/`** as **`*.hook.ts`** (e.g. **`use-user-profile.query.hook.ts`**, **`use-save-profile.mutation.hook.ts`**). Consumers must be **client** components.
+- **Query keys:** Colocate **`*.query-keys.const.ts`** factories in the same **`src/hooks/api/<domain>/`** folder; use them for stable **`queryKey`** arrays.
+- **Same standards:** Arrow functions only, no **`any`**, multi-arg helpers use **`I<FuncName>Props`**.
 
 ## Arrow functions — no `function` keyword
 

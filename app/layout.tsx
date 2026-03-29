@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/src/features/auth/providers/auth-provider.component";
+import { QueryClientProviderComponent } from "@/src/features/query/providers/query-client-provider.component";
 import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -32,7 +33,9 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
+        <QueryClientProviderComponent>
+          <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
+        </QueryClientProviderComponent>
       </body>
     </html>
   );

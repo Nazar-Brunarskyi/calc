@@ -76,36 +76,32 @@ It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) 
 
 You do **not** need to call `connectMongoDb()` again inside the handler unless you have a code path that bypasses this wrapper. Handlers typically call **`userRepository`**, **`sessionRepository`**, or use **`getUserModel(mongoose)`** / **`getSessionModel(mongoose)`** after the global preset has connected.
 
-**Example** (pattern used in `app/api/users/[id]/route.ts` — thin handler + repository):
+**Example** (pattern used in `app/api/me/route.ts` — thin handler + shared session resolution):
 
 ```ts
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import mongoose from "mongoose";
-
+import { AppError } from "@/app/api/_shared/features/error-handling/instances/app-error";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
-import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
+import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import type { IUserMe } from "@/src/interfaces/user-me.interface";
+import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
 
-interface IRouteContext {
-  params: Promise<{ id: string }>;
-}
+type IMeSuccessBody = {
+  user: IUserMe;
+};
 
-export const GET = createGlobalRouteHandler<IRouteContext>(
-  async (_request: NextRequest, context: IRouteContext) => {
-    const { id } = await context.params;
+export const GET = createGlobalRouteHandler(
+  async () => {
+    const user = await getCurrentUserForPage();
 
-    if (!mongoose.isValidObjectId(id)) {
-      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    if (user === null) {
+      throw new AppError({
+        message: "Unauthorized",
+        statusCode: 401,
+        name: "unauthorized",
+      });
     }
 
-    const me = await userRepository.getMe({ id });
-    if (me === null) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      user: { _id: id, username: me.username },
-    });
+    return sendResponse<IMeSuccessBody>({ user });
   },
 );
 ```

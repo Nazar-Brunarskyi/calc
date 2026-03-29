@@ -77,7 +77,7 @@ Code that is **reused across the app** but is not a React component belongs unde
 | `src/types`      | Shared definitions made with the **`type`** keyword: aliases, unions, intersections, mapped/conditional utility types, and other type-level-only constructs.  |
 | `src/interfaces` | Shared declarations using the **`interface`** keyword: object shapes, contracts, and extendable API/domain shapes.                                            |
 | `src/constants`  | Shared **constants** (config keys, limits, labels used in multiple places, enum-like values). Avoid dumping unrelated literals in one file as the tree grows. |
-| `src/hooks`      | Shared **React hooks** (`use*` modules) used from more than one route or feature.                                                                             |
+| `src/hooks`      | Shared **React hooks** (`use*` modules) used from more than one route or feature. **TanStack Query** hooks and API-domain **query key** factories live under **`src/hooks/api/<domain>/`** when you add them. |
 | `src/utils`      | Shared **non-hook** helpers (pure utilities, env readers, small parsers) used from more than one place. Prefer **kebab-case** and a **`.util.ts`** suffix (see [.cursor/rules/general.mdc](./.cursor/rules/general.mdc)). |
 
 **`src/features/<feature>/`:** Optional **vertical slices** for app-wide code that belongs to a named product concern (not generic `src/components` / `src/utils`). Keep each feature self-contained under its folder. Use a **`providers/`** subfolder for **React context providers** (and their hooks when exported from the same module); use **`components/`** for other feature UI (gates, panels, etc.).
@@ -85,7 +85,8 @@ Code that is **reused across the app** but is not a React component belongs unde
 | Path                         | Purpose |
 | ---------------------------- | ------- |
 | `src/features/error-handling/` | Shared API error **enums**, **`ISnackbarArgs`**, and **`APP_ERROR_CODES_TYPE`** used with **`AppError`** / route error middleware (see §4). |
-| `src/features/auth/`         | **`AuthProvider`** and **`useAuth`** in **`providers/auth-provider.component.tsx`**; **`RequireAuthGate`** in **`components/require-auth-gate.component.tsx`**; **`withAuth`** in **`components/with-auth.hoc.tsx`**. The root **`app/layout.tsx`** wraps the tree with **`AuthProvider`** (passing server-resolved `initialUser`). Protected pages use **`export default withAuth(Page)`**; **`withAuth`** awaits **`getCurrentUserForPage`** from **`src/utils/server/get-current-user-for-page.util.ts`**, **`redirect("/login")`** when unauthenticated, and wraps the **page** in **`RequireAuthGate`**. Import providers from **`@/src/features/auth/providers/...`** and gates / HOC from **`@/src/features/auth/components/...`**. |
+| `src/features/auth/`         | **`AuthProvider`** and **`useAuth`** in **`providers/auth-provider.component.tsx`**; **`RequireAuthGate`** in **`components/require-auth-gate.component.tsx`**; **`withAuth`** in **`components/with-auth.hoc.tsx`**. The root **`app/layout.tsx`** wraps the tree with **`AuthProvider`** (passing server-resolved `initialUser`), nested inside **`QueryClientProviderComponent`** (see **`src/features/query/`**). Protected pages use **`export default withAuth(Page)`**; **`withAuth`** awaits **`getCurrentUserForPage`** from **`src/utils/server/get-current-user-for-page.util.ts`**, **`redirect("/login")`** when unauthenticated, and wraps the **page** in **`RequireAuthGate`**. Import providers from **`@/src/features/auth/providers/...`** and gates / HOC from **`@/src/features/auth/components/...`**. |
+| `src/features/query/`        | **`QueryClientProviderComponent`** in **`providers/query-client-provider.component.tsx`**: wraps the app with **`QueryClientProvider`** from **`@tanstack/react-query`**. **`ReactQueryDevtoolsLazy`** in **`components/react-query-devtools-lazy.component.tsx`** loads **React Query Devtools** via **`next/dynamic`** (no SSR) in development only. Hooks that call **`useQuery`** / **`useMutation`** live under **`src/hooks/api/<domain>/`**, not in this folder. |
 
 If a single concern needs both a `type` and an `interface`, use two files (one under `src/types`, one under `src/interfaces`) or split by the primary export so each file’s main exports match that folder’s rule.
 
@@ -104,6 +105,7 @@ src/
   constants/
     limits.const.ts
   hooks/
+    api/                    # TanStack Query: add <domain>/ when you implement hooks
     use-media-query.hook.ts
   utils/
     read-required-env.util.ts
@@ -119,9 +121,19 @@ import { useMediaQuery } from "@/src/hooks/use-media-query.hook";
 import { readRequiredEnv } from "@/src/utils/read-required-env.util";
 ```
 
+### TanStack Query
+
+The app uses [**TanStack Query**](https://tanstack.com/query) (**`@tanstack/react-query`**) for client-side server-state against **`app/api/**`** route handlers.
+
+- **Provider:** **`QueryClientProviderComponent`** — **`src/features/query/providers/query-client-provider.component.tsx`**. **`app/layout.tsx`** wraps **`AuthProvider`** inside it. The **`QueryClient`** is created with **`useState(() => new QueryClient(…))`** so it is not shared across requests.
+- **Devtools:** **`ReactQueryDevtoolsLazy`** — **`src/features/query/components/react-query-devtools-lazy.component.tsx`** (dynamic import, development only).
+- **Hooks and keys:** Put **`useQuery`** / **`useMutation`** wrappers in **`src/hooks/api/<domain>/`** using **`*.hook.ts`** (e.g. **`use-user.query.hook.ts`**, **`use-update-profile.mutation.hook.ts`**). Colocate **query key factories** in the same domain folder as **`*.query-keys.const.ts`** (exception: keys are domain-scoped, not generic **`src/constants`**).
+- **Consumers:** Hooks run in **client** components (`"use client"`). Server Components stay async/RSC unless you add prefetch + hydration later.
+- **Fetching:** Use **`fetch`** to **`/api/...`** in **`queryFn`** / **`mutationFn`**; reuse shared types from **`src/interfaces`** where applicable.
+
 ### Path aliases
 
-This project keeps the App Router at the project root (`app/`) and uses **`@/*` → `./*`** in `tsconfig.json`. Shared code under `src/` is imported with the `src/` segment in the path, for example `@/src/components/...`, `@/src/features/...`, `@/src/types/...`, `@/src/interfaces/...`, `@/src/constants/...`, `@/src/hooks/...`, and `@/src/utils/...`. **`DB/*` → `./lib/mongodb/*`** is also configured for Mongoose schemas, models, and DB helpers without a deep `lib/mongodb` path at every call site (see [db-schema.md](./db-schema.md) and [lib/mongodb/README.md](./lib/mongodb/README.md)). If you later move `app/` under `src/` (full `src/` layout), update `paths` so `@/*` still resolves correctly.
+This project keeps the App Router at the project root (`app/`) and uses **`@/*` → `./*`** in `tsconfig.json`. Shared code under `src/` is imported with the `src/` segment in the path, for example `@/src/components/...`, `@/src/features/...`, `@/src/types/...`, `@/src/interfaces/...`, `@/src/constants/...`, `@/src/hooks/...` (including **`@/src/hooks/api/...`**), and `@/src/utils/...`. **`DB/*` → `./lib/mongodb/*`** is also configured for Mongoose schemas, models, and DB helpers without a deep `lib/mongodb` path at every call site (see [db-schema.md](./db-schema.md) and [lib/mongodb/README.md](./lib/mongodb/README.md)). If you later move `app/` under `src/` (full `src/` layout), update `paths` so `@/*` still resolves correctly.
 
 ### Library docs
 
@@ -182,8 +194,8 @@ Implementation details (arrow functions, `I*Props`, no `any`) follow [.cursor/ru
 ## Rule of thumb
 
 - **Used once?** Keep it next to the page: `app/<route>/components/` (and colocate local types, interfaces, constants, or hooks there if they are not shared).
-- **Used more than once?** Move UI to `src/components` (or under **`src/features/<feature>/components/`** when it belongs to a named vertical — see **`src/features`** above); put **React context providers** for that feature under **`src/features/<feature>/providers/`** (see **`src/features/auth/providers/`**); shared **`type`**-based definitions to `src/types`; shared **`interface`** declarations to `src/interfaces`; shared constants to `src/constants`; shared hooks to `src/hooks`; shared non-hook helpers to `src/utils`.
+- **Used more than once?** Move UI to `src/components` (or under **`src/features/<feature>/components/`** when it belongs to a named vertical — see **`src/features`** above); put **React context providers** for that feature under **`src/features/<feature>/providers/`** (see **`src/features/auth/providers/`**, **`src/features/query/providers/`** for TanStack Query); shared **`type`**-based definitions to `src/types`; shared **`interface`** declarations to `src/interfaces`; shared constants to `src/constants`; shared hooks to `src/hooks` (TanStack Query **`useQuery`** / **`useMutation`** modules under **`src/hooks/api/<domain>/`**); shared non-hook helpers to `src/utils`.
 
 ## Possible extensions
 
-Later guidelines can cover other naming topics, data fetching, API clients, and (if added) a **NestJS** backend and how it maps to this frontend. This file focuses on placement, colocation, the shared `src/` tree, **role suffixes** on filenames (`.type.ts`, `.interface.ts`, `.hook.ts`, `.util.ts`, `.component.tsx`), and the App Router API layout under `app/api`.
+Later guidelines can cover other naming topics and (if added) a **NestJS** backend and how it maps to this frontend. Client **data fetching** to **`app/api`** uses **TanStack Query** (see **TanStack Query** above). This file focuses on placement, colocation, the shared `src/` tree, **role suffixes** on filenames (`.type.ts`, `.interface.ts`, `.hook.ts`, `.util.ts`, `.component.tsx`), and the App Router API layout under `app/api`.
