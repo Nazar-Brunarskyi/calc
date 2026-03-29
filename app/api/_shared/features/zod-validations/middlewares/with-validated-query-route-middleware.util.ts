@@ -4,19 +4,19 @@ import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
 import type { NextRequest } from "next/server";
 import type { ZodType } from "zod";
 
-export const withValidatedQuery = <TSchema extends ZodType>(
-  schema: TSchema,
-): TRouteMiddleware<IRouteHandlerContext> => async (
-  request: NextRequest,
-  context,
-  next,
-) => {
-  const record = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const parsed = schema.safeParse(record);
-  if (!parsed.success) {
-    throw new ValidationError({ zodError: parsed.error });
-  }
+export const withValidatedQuery =
+  <TSchema extends ZodType>(
+    schema: TSchema,
+  ): TRouteMiddleware<IRouteHandlerContext> =>
+  async (request: NextRequest, context, next) => {
+    const record = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const parsed = schema.safeParse(record);
 
-  context.query = parsed.data;
-  return next();
-};
+    if (!parsed.success) {
+      throw new ValidationError({ zodError: parsed.error });
+    }
+
+    context.query = parsed.data;
+
+    return next();
+  };

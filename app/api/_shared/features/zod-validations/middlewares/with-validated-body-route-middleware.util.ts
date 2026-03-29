@@ -5,25 +5,25 @@ import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
 import type { NextRequest } from "next/server";
 import type { ZodType } from "zod";
 
-export const withValidatedBody = <TSchema extends ZodType>(
-  schema: TSchema,
-): TRouteMiddleware<IRouteHandlerContext> => async (
-  request: NextRequest,
-  context,
-  next,
-) => {
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    throw new BadRequestError({ message: "Invalid request" });
-  }
+export const withValidatedBody =
+  <TSchema extends ZodType>(
+    schema: TSchema,
+  ): TRouteMiddleware<IRouteHandlerContext> =>
+  async (request: NextRequest, context, next) => {
+    let raw: unknown;
+    try {
+      raw = await request.json();
+    } catch {
+      throw new BadRequestError({ message: "Invalid request" });
+    }
 
-  const parsed = schema.safeParse(raw);
-  if (!parsed.success) {
-    throw new ValidationError({ zodError: parsed.error });
-  }
+    const parsed = schema.safeParse(raw);
 
-  context.body = parsed.data;
-  return next();
-};
+    if (!parsed.success) {
+      throw new ValidationError({ zodError: parsed.error });
+    }
+
+    context.body = parsed.data;
+
+    return next();
+  };
