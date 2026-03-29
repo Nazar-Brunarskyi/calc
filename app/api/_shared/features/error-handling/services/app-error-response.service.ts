@@ -10,6 +10,7 @@ export interface IAppErrorResponseFields {
   error_code?: APP_ERROR_CODES_TYPE;
   snackbar?: ISnackbarArgs;
   cookies?: IRedirectResponseCookie[];
+  error_context?: Record<string, unknown>;
 }
 
 /**
@@ -63,6 +64,18 @@ const normalizeCookiesFromPlainThrownAppError = (
     : undefined;
 };
 
+/**
+ * PRIVATE
+ */
+const normalizeErrorContextFromThrownObject = (
+  value: unknown,
+): Record<string, unknown> | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  return isRecord(value) ? value : undefined;
+};
+
 const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
   if (error instanceof AppError) {
     return {
@@ -71,6 +84,7 @@ const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
       error_code: error.error_code,
       snackbar: error.snackbar,
       cookies: error.cookies,
+      error_context: error.error_context,
     };
   }
 
@@ -94,6 +108,9 @@ const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
         : undefined;
 
   const cookies = normalizeCookiesFromPlainThrownAppError(error.cookies);
+  const error_context = normalizeErrorContextFromThrownObject(
+    error.error_context,
+  );
 
   return {
     message: error.message,
@@ -101,6 +118,7 @@ const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
     error_code: error.error_code as APP_ERROR_CODES_TYPE | undefined,
     snackbar,
     cookies,
+    error_context,
   };
 };
 

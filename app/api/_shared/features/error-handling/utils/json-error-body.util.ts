@@ -4,6 +4,7 @@ export const jsonErrorBody = ({
   error,
   error_code,
   snackbar,
+  error_context,
 }: IApiErrorBody): IApiErrorBody => {
   const body: IApiErrorBody = { error };
 
@@ -13,6 +14,10 @@ export const jsonErrorBody = ({
 
   if (snackbar !== undefined) {
     body.snackbar = snackbar;
+  }
+
+  if (error_context !== undefined) {
+    body.error_context = error_context;
   }
 
   return body;

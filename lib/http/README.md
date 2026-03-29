@@ -54,7 +54,7 @@ export const GET = createRouteHandler<ICtx>(
 
 ## `createGlobalRouteHandler` (MongoDB preset)
 
-When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with middleware order **`[withRouteErrorHandler, withMongoDbConnection, …props.middleware]`**: the error wrapper is **outermost** (runs first on the way in), then the MongoDB connection step, then any optional `middleware` you pass in props. On uncaught errors, **`withRouteErrorHandler`** returns **`NextResponse.json(jsonErrorBody(…), { status })`** (see `app/api/_shared/features/error-handling/`): thrown **`AppError`** and its subclasses (e.g. **`BadRequestError`**, **`NotFoundError`** in `instances/`), plus plain objects accepted by **`appErrorResponseService.getResponseFields`**, become a body with **`error`** (their message), optional **`error_code`**, optional **`snackbar`**, and their **`statusCode`**. Any other thrown **`Error`** or non-object value gets status **500** with **`error: "Internal Server Error"`** and **`error_code: "APP_LEVEL_UNKNOWN_ERROR"`** (**`APP_UNKNOWN_ERROR_TYPES_ENUM`**)—client responses do **not** include the original **`Error.message`** unless it went through **`AppError`** / recognized app-error shape. **`jsonErrorBody`** omits **`error_code`** and **`snackbar`** keys when those values are **`undefined`**. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
+When many handlers share the same first step (connect MongoDB), use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util`. It is `createRouteHandler` with middleware order **`[withRouteErrorHandler, withMongoDbConnection, …props.middleware]`**: the error wrapper is **outermost** (runs first on the way in), then the MongoDB connection step, then any optional `middleware` you pass in props. On uncaught errors, **`withRouteErrorHandler`** returns **`NextResponse.json(jsonErrorBody(…), { status })`** (see `app/api/_shared/features/error-handling/`): thrown **`AppError`** and its subclasses (e.g. **`BadRequestError`**, **`NotFoundError`** in `instances/`), plus plain objects accepted by **`appErrorResponseService.getResponseFields`**, become a body with **`error`** (their message), optional **`error_code`**, optional **`snackbar`**, optional **`error_context`**, and their **`statusCode`**. Any other thrown **`Error`** or non-object value gets status **500** with **`error: "Internal Server Error"`** and **`error_code: "APP_LEVEL_UNKNOWN_ERROR"`** (**`APP_UNKNOWN_ERROR_TYPES_ENUM`**)—client responses do **not** include the original **`Error.message`** unless it went through **`AppError`** / recognized app-error shape. **`jsonErrorBody`** omits **`error_code`**, **`snackbar`**, and **`error_context`** keys when those values are **`undefined`**. The optional second argument uses the same **`ICreateRouteHandlerProps`** shape as `createRouteHandler` (see shared types above).
 
 ```ts
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
@@ -88,17 +88,26 @@ export const GET = createGlobalRouteHandler<IRouteHandlerContext & { user: IAppU
 
 Routes that use **`createRouteHandler` only** do not get the global error wrapper unless you add **`withRouteErrorHandler`** (or similar) to their `middleware` array yourself; see `@/app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util`.
 
-## App API route middleware (`app/api/_shared/route-handlers/`)
+## App API route middleware
 
 Use these with **`createRouteHandler`** or **`createGlobalRouteHandler`** via **`props.middleware`** (one function or an array). With **`createGlobalRouteHandler`**, your entries run **after** **`withMongoDbConnection`** (order: **`withRouteErrorHandler`** → **`withMongoDbConnection`** → **`…props.middleware`** → handler).
+
+**`app/api/_shared/route-handlers/`**
 
 | Middleware | Role |
 | --- | --- |
 | **`withAuthMiddleware`** | Resolves **`session_id`**, loads **`user`**, sets **`context.user`**, throws **`AppLevelUnauthorizedError`** (401) when unauthenticated. |
-| **`withValidatedBody(schema)`** | **`await request.json()`** once, **`schema.safeParse`**, assigns **`context.body`** on success; on invalid JSON or parse failure throws **`BadRequestError`** with message **`"Invalid request"`** (generic client message). Use only on routes that expect a JSON body. |
-| **`withValidatedQuery(schema)`** | Builds a record from **`request.nextUrl.searchParams`**, **`schema.safeParse`**, assigns **`context.query`**; same **`BadRequestError`** behavior on failure. Duplicate query keys: last value wins (**`Object.fromEntries`**). |
+
+**`app/api/_shared/features/zod-validations/middlewares/`** (Zod)
+
+| Middleware | Role |
+| --- | --- |
+| **`withValidatedBody(schema)`** | **`await request.json()`** once, then **`schema.safeParse`**. On success assigns **`context.body`**. If **`request.json()`** throws (invalid JSON / empty body where JSON is required), throws **`BadRequestError`** (**`"Invalid request"`**) — no Zod issues. If JSON parses but **Zod** fails, throws **`ValidationError`** (**`app/api/_shared/features/zod-validations/instances/validation-error.ts`**): HTTP **400**, **`error_code`** **`DATA_VALIDATION_ERROR`**, **`error_context.validation`** with **`IZodValidationFailure`** (**`issues`** from Zod). Use only on routes that expect a JSON body. |
+| **`withValidatedQuery(schema)`** | Builds a record from **`request.nextUrl.searchParams`**, **`schema.safeParse`**, assigns **`context.query`** on success; on Zod failure throws **`ValidationError`** (same **`error_code`** / **`error_context.validation`** shape as body validation). Duplicate query keys: last value wins (**`Object.fromEntries`**). |
 
 **Composition:** Put **auth** before **body** / **query** when all apply, e.g. **`middleware: [withAuthMiddleware, withValidatedBody(bodySchema)]`**. The handler must read **`context.body`** / **`context.query`** — do not call **`request.json()`** again after **`withValidatedBody`**.
+
+**Zod validation vs JSON errors:** Schema failures are **`ValidationError`** so the client can branch on **`error_code`** and read **`error_context.validation.issues`**. Malformed JSON on body routes stays **`BadRequestError`** without validation metadata. See [ARCHITECTURE.md](../ARCHITECTURE.md) §4 (**Zod validation errors**).
 
 **Typing:** Pass a generic on **`createGlobalRouteHandler`** that intersects **`IRouteHandlerContext`** with required fields your chain guarantees, e.g. **`IRouteHandlerContext & { user: IAppUser } & { body: YourRequestDto }`**. Align the Zod schema with **`src/DTOs/<domain>/*.dto.ts`** using **`const bodySchema: ZodType<IYourRequestDto> = z.object({ … })`**.
 

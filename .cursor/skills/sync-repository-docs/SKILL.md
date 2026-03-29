@@ -37,7 +37,7 @@ Do **not** paste long policy from **general.mdc** into other docs — edit the s
 
 - **Stack**: Next.js (App Router), React, TypeScript, Tailwind, MongoDB / Mongoose
 - **API**: Thin `app/api/**/route.ts`; **`createGlobalRouteHandler`** = `withRouteErrorHandler` + `withMongoDbConnection` + optional middleware
-- **Errors**: `AppError` and subclasses in `app/api/_shared/features/error-handling/instances/`; JSON via `jsonErrorBody`
+- **Errors**: `AppError` and subclasses in `app/api/_shared/features/error-handling/instances/`; Zod schema failures via `ValidationError` under `zod-validations/instances/`; JSON via `jsonErrorBody` (`IApiErrorBody`, optional `error_context`)
 - **Aliases**: `@/*` → repo root; `DB/*` → `lib/mongodb/*`
 
 ## Workflow
