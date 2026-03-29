@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 export default async function LoginPage() {
   const user = await getCurrentUserForPage();
+
   if (user !== null) {
     redirect("/profile");
   }
