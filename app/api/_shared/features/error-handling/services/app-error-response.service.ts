@@ -1,3 +1,4 @@
+import type { IRedirectResponseCookie } from "@/app/api/_shared/utils/redirect-response.util";
 import type { APP_ERROR_CODES_TYPE } from "@/src/features/error-handling/enums/error-codes";
 import type { ISnackbarArgs } from "@/src/features/error-handling/interfaces/snackbar-args.interface";
 
@@ -8,6 +9,7 @@ export interface IAppErrorResponseFields {
   statusCode: number;
   error_code?: APP_ERROR_CODES_TYPE;
   snackbar?: ISnackbarArgs;
+  cookies?: IRedirectResponseCookie[];
 }
 
 /**
@@ -32,6 +34,35 @@ const isSnackbarArgsLike = (value: unknown): value is ISnackbarArgs => {
   );
 };
 
+/**
+ * PRIVATE
+ */
+const isRedirectResponseCookieLike = (
+  value: unknown,
+): value is IRedirectResponseCookie => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return typeof value.name === "string" && typeof value.value === "string";
+};
+
+/**
+ * PRIVATE
+ */
+const normalizeCookiesFromPlainThrownAppError = (
+  cookiesFromThrownObject: unknown,
+): IRedirectResponseCookie[] | undefined => {
+  if (!Array.isArray(cookiesFromThrownObject)) {
+    return undefined;
+  }
+  const cookiesMatchingRedirectShape = cookiesFromThrownObject.filter(
+    isRedirectResponseCookieLike,
+  );
+  return cookiesMatchingRedirectShape.length > 0
+    ? cookiesMatchingRedirectShape
+    : undefined;
+};
+
 const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
   if (error instanceof AppError) {
     return {
@@ -39,6 +70,7 @@ const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
       statusCode: error.statusCode,
       error_code: error.error_code,
       snackbar: error.snackbar,
+      cookies: error.cookies,
     };
   }
 
@@ -53,19 +85,22 @@ const getResponseFields = (error: unknown): IAppErrorResponseFields | null => {
     return null;
   }
 
-  const snackbarRaw = error.snackbar;
+  const snackbarFromThrownObject = error.snackbar;
   const snackbar =
-    snackbarRaw === undefined
+    snackbarFromThrownObject === undefined
       ? undefined
-      : isSnackbarArgsLike(snackbarRaw)
-        ? snackbarRaw
+      : isSnackbarArgsLike(snackbarFromThrownObject)
+        ? snackbarFromThrownObject
         : undefined;
+
+  const cookies = normalizeCookiesFromPlainThrownAppError(error.cookies);
 
   return {
     message: error.message,
     statusCode: error.statusCode,
     error_code: error.error_code as APP_ERROR_CODES_TYPE | undefined,
     snackbar,
+    cookies,
   };
 };
 

@@ -1,5 +1,6 @@
 import type { IRedirectResponseCookie } from "@/app/api/_shared/utils/redirect-response.util";
 import { redirectResponse } from "@/app/api/_shared/utils/redirect-response.util";
+import { SESSION_ID_COOKIE_NAME } from "@/src/constants/session-id-cookie.const";
 import type { NextRequest, NextResponse } from "next/server";
 
 export interface IBuildOauthRedirectProps {
@@ -47,6 +48,19 @@ const buildOauthRedirect = ({
   });
 };
 
+const buildSessionIdCookieClear = (): IRedirectResponseCookie => ({
+  name: SESSION_ID_COOKIE_NAME,
+  value: "",
+  options: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 0,
+    path: "/",
+  },
+});
+
 export const authService = {
   buildOauthRedirect,
+  buildSessionIdCookieClear,
 };

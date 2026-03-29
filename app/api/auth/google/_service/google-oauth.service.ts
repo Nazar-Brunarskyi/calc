@@ -245,14 +245,15 @@ const handleGoogleOAuthCallback = async (
   const redirect = ({
     query,
     extraCookies,
-  }: IGoogleOauthCallbackRedirectProps) =>
-    authService.buildOauthRedirect({
+  }: IGoogleOauthCallbackRedirectProps) => {
+    return authService.buildOauthRedirect({
       request,
       path: successPath,
       query,
       stateCookieName: GOOGLE_OAUTH_STATE_COOKIE_NAME,
       extraCookies,
     });
+  };
 
   const env = tryCatchService.runSync(() => readGoogleOauthEnv());
 

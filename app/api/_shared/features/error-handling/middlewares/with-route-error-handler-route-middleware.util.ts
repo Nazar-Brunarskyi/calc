@@ -1,3 +1,4 @@
+import { applyCookiesToNextResponse } from "@/app/api/_shared/utils/apply-cookies-to-next-response.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
 import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
@@ -18,7 +19,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
     if (appFields !== null) {
       console.error("AppError:", appFields.message, error);
 
-      return sendResponse(
+      const response = sendResponse(
         jsonErrorBody({
           error: appFields.message,
           error_code: appFields.error_code,
@@ -26,6 +27,15 @@ export const withRouteErrorHandler: TRouteMiddleware<
         }),
         { status: appFields.statusCode },
       );
+
+      if (appFields.cookies !== undefined) {
+        applyCookiesToNextResponse({
+          response,
+          cookies: appFields.cookies,
+        });
+      }
+
+      return response;
     }
 
     if (error instanceof Error) {
