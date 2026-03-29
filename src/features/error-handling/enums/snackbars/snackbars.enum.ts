@@ -1,4 +1,4 @@
-export enum SNACKBARS_ENUM {
+export enum TOASTER_TYPES_ENUM {
   WARNING = "WARNING",
   ERROR = "ERROR",
   INFO = "INFO",
