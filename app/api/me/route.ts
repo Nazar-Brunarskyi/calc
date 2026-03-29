@@ -1,19 +1,14 @@
-import { AppLevelUnauthorizedError } from "@/app/api/_shared/features/error-handling/instances/unauthorized-error";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import { withAuthMiddleware } from "@/app/api/_shared/route-handlers/with-auth-route-middleware.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import type { IAuthenticatedRouteHandlerContext } from "@/app/api/_shared/interfaces/authenticated-route-handler-context.interface";
 import type { IUserMe } from "@/src/interfaces/user-me.interface";
-import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
 
 type IMeSuccessBody = {
   user: IUserMe;
 };
 
-export const GET = createGlobalRouteHandler(async () => {
-  const user = await getCurrentUserForPage();
-
-  if (user === null) {
-    throw new AppLevelUnauthorizedError();
-  }
-
-  return sendResponse<IMeSuccessBody>({ user });
-});
+export const GET = createGlobalRouteHandler<IAuthenticatedRouteHandlerContext>(
+  async (_request, { user }) => sendResponse<IMeSuccessBody>({ user }),
+  { middleware: [withAuthMiddleware] },
+);

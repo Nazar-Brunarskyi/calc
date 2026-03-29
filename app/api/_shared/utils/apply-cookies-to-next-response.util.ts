@@ -1,6 +1,6 @@
 import type { NextResponse } from "next/server";
 
-import type { IRedirectResponseCookie } from "@/src/interfaces/redirect-response-cookie.interface";
+import type { IRedirectResponseCookie } from "@/app/api/_shared/interfaces/redirect-response-cookie.interface";
 
 export interface IApplyCookiesToNextResponseProps<
   TResponse extends NextResponse,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { applyCookiesToNextResponse } from "./apply-cookies-to-next-response.util";
-import type { IRedirectResponseCookie } from "@/src/interfaces/redirect-response-cookie.interface";
+import type { IRedirectResponseCookie } from "@/app/api/_shared/interfaces/redirect-response-cookie.interface";
 
 export type { IRedirectResponseCookie };
 

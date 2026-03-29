@@ -14,11 +14,11 @@ export const createGlobalRouteHandler = <
 >(
   handler: TRouteHandler<TContext>,
   props?: ICreateRouteHandlerProps<TContext>,
-): TWrappedRouteHandler<TContext> =>
+): TWrappedRouteHandler<IRouteHandlerContext> =>
   createRouteHandler(handler, {
     middleware: [
       withRouteErrorHandler,
       withMongoDbConnection,
       ...normalizeRouteMiddleware({ middleware: props?.middleware }),
     ],
-  });
+  }) as TWrappedRouteHandler<IRouteHandlerContext>;

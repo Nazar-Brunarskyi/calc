@@ -10,7 +10,7 @@ This is a [Next.js](https://nextjs.org) project (App Router) using **React**, **
 
 ## API routes
 
-Example: **`GET /api/me`** returns the signed-in user (from the **`session_id`** cookie) or **401** when unauthenticated. Route handlers that need the database can use **`createGlobalRouteHandler`** from `@/app/api/_shared/route-handlers/global-route-handler.util` so **`withRouteErrorHandler`** (structured JSON errors: **`error`**, optional **`error_code`**, optional **`snackbar`**) and **`withMongoDbConnection`** run before your handler (see `app/api/me/route.ts` and [lib/http/README.md](./lib/http/README.md)).
+Example: **`GET /api/me`** returns the signed-in user (from the **`session_id`** cookie) or **401** when unauthenticated, using **`createGlobalRouteHandler`** with optional **`withAuthMiddleware`** so the session is resolved in middleware and **`user`** is on **`context`** (see `app/api/me/route.ts`). **`createGlobalRouteHandler`** also applies **`withRouteErrorHandler`** (structured JSON errors: **`error`**, optional **`error_code`**, optional **`snackbar`**) and **`withMongoDbConnection`** before your handler ([lib/http/README.md](./lib/http/README.md)).
 
 **Google OAuth** (`/api/auth/google`, callback under `/api/auth/google/callback`): on success the app persists or updates the user, creates a row in the **`sessions`** collection, and sets an httpOnly **`session_id`** cookie (see `.env.example` for **`OAUTH_SUCCESS_REDIRECT_PATH`**). Shared cookie name: `src/constants/session-id-cookie.const.ts`.
 

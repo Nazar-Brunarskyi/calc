@@ -69,4 +69,21 @@ export const GET = createGlobalRouteHandler<ICtx>(async (_req, ctx) => {
 });
 ```
 
+**Typing and auth:** **`createGlobalRouteHandler`** is implemented with a cast so the **exported** route matches the App Router’s base **`context`** shape (**`IRouteHandlerContext`**), while you still pass a **generic** that **extends** **`IRouteHandlerContext`** when middleware narrows **`context`** (e.g. **`withAuthMiddleware`** sets **`user`**). Example (**`app/api/me/route.ts`**):
+
+```ts
+import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import { withAuthMiddleware } from "@/app/api/_shared/route-handlers/with-auth-route-middleware.util";
+import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import type { IAuthenticatedRouteHandlerContext } from "@/app/api/_shared/interfaces/authenticated-route-handler-context.interface";
+import type { IUserMe } from "@/src/interfaces/user-me.interface";
+
+type IMeSuccessBody = { user: IUserMe };
+
+export const GET = createGlobalRouteHandler<IAuthenticatedRouteHandlerContext>(
+  async (_request, { user }) => sendResponse<IMeSuccessBody>({ user }),
+  { middleware: [withAuthMiddleware] },
+);
+```
+
 Routes that use **`createRouteHandler` only** do not get the global error wrapper unless you add **`withRouteErrorHandler`** (or similar) to their `middleware` array yourself; see `@/app/api/_shared/features/error-handling/middlewares/with-route-error-handler-route-middleware.util`.

@@ -76,33 +76,22 @@ It wraps **`createRouteHandler`** (see `lib/http/create-route-handler.util.ts`) 
 
 You do **not** need to call `connectMongoDb()` again inside the handler unless you have a code path that bypasses this wrapper. Handlers typically call **`userRepository`**, **`sessionRepository`**, or use **`getUserModel(mongoose)`** / **`getSessionModel(mongoose)`** after the global preset has connected.
 
-**Example** (pattern used in `app/api/me/route.ts` — thin handler + shared session resolution):
+**Example** (pattern used in `app/api/me/route.ts` — **`withAuthMiddleware`** runs after **`withMongoDbConnection`**, resolves **`session_id`**, sets **`context.user`**, and throws **`AppLevelUnauthorizedError`** when there is no valid session; the handler stays thin):
 
 ```ts
-import { AppError } from "@/app/api/_shared/features/error-handling/instances/app-error";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
+import { withAuthMiddleware } from "@/app/api/_shared/route-handlers/with-auth-route-middleware.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
+import type { IAuthenticatedRouteHandlerContext } from "@/app/api/_shared/interfaces/authenticated-route-handler-context.interface";
 import type { IUserMe } from "@/src/interfaces/user-me.interface";
-import { getCurrentUserForPage } from "@/src/utils/server/get-current-user-for-page.util";
 
 type IMeSuccessBody = {
   user: IUserMe;
 };
 
-export const GET = createGlobalRouteHandler(
-  async () => {
-    const user = await getCurrentUserForPage();
-
-    if (user === null) {
-      throw new AppError({
-        message: "Unauthorized",
-        statusCode: 401,
-        name: "unauthorized",
-      });
-    }
-
-    return sendResponse<IMeSuccessBody>({ user });
-  },
+export const GET = createGlobalRouteHandler<IAuthenticatedRouteHandlerContext>(
+  async (_request, { user }) => sendResponse<IMeSuccessBody>({ user }),
+  { middleware: [withAuthMiddleware] },
 );
 ```
 
