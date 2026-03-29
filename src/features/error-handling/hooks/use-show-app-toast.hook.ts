@@ -29,30 +29,30 @@ const toastShell = "border shadow-md !border-l-4 [&_[data-icon]]:shrink-0";
 const typeClassNames: Record<TOASTER_TYPES_ENUM, TAppToastClassNames> = {
   [TOASTER_TYPES_ENUM.SUCCESS]: {
     toast: `${toastShell} !border-emerald-200 !border-l-emerald-600 !bg-emerald-50 dark:!border-emerald-800 dark:!border-l-emerald-400 dark:!bg-emerald-950/55`,
-    title: "font-semibold text-emerald-950 dark:text-emerald-50",
-    description: "text-emerald-900/85 dark:text-emerald-100/85",
+    title: "!font-semibold !text-emerald-950 dark:!text-emerald-50",
+    description: "!text-emerald-900/90 dark:!text-emerald-100/90",
   },
   [TOASTER_TYPES_ENUM.ERROR]: {
     toast: `${toastShell} !border-red-200 !border-l-red-600 !bg-red-50 dark:!border-red-900 dark:!border-l-red-400 dark:!bg-red-950/55`,
-    title: "font-semibold text-red-950 dark:text-red-50",
-    description: "text-red-900/85 dark:text-red-100/85",
+    title: "!font-semibold !text-red-950 dark:!text-red-50",
+    description: "!text-red-900/90 dark:!text-red-100/90",
   },
   [TOASTER_TYPES_ENUM.WARNING]: {
     toast: `${toastShell} !border-amber-200 !border-l-amber-500 !bg-amber-50 dark:!border-amber-900 dark:!border-l-amber-400 dark:!bg-amber-950/55`,
-    title: "font-semibold text-amber-950 dark:text-amber-50",
-    description: "text-amber-900/85 dark:text-amber-100/85",
+    title: "!font-semibold !text-amber-950 dark:!text-amber-50",
+    description: "!text-amber-900/90 dark:!text-amber-100/90",
   },
   [TOASTER_TYPES_ENUM.INFO]: {
     toast: `${toastShell} !border-sky-200 !border-l-sky-600 !bg-sky-50 dark:!border-sky-900 dark:!border-l-sky-400 dark:!bg-sky-950/55`,
-    title: "font-semibold text-sky-950 dark:text-sky-50",
-    description: "text-sky-900/85 dark:text-sky-100/85",
+    title: "!font-semibold !text-sky-950 dark:!text-sky-50",
+    description: "!text-sky-900/90 dark:!text-sky-100/90",
   },
 };
 
 const fallbackClassNames: TAppToastClassNames = {
   toast: `${toastShell} !border-border !border-l-muted-foreground !bg-popover`,
-  title: "font-semibold text-foreground",
-  description: "text-muted-foreground",
+  title: "!font-semibold !text-foreground",
+  description: "!text-muted-foreground",
 };
 
 /**
