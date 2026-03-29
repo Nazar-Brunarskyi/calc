@@ -2,7 +2,7 @@ import { applyCookiesToNextResponse } from "@/app/api/_shared/utils/apply-cookie
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
 import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
-import { INTERNAL_SERVER_ERROR_CODE } from "@/src/features/error-handling/enums/error-codes";
+import { APP_UNKNOWN_ERROR_TYPES_ENUM } from "@/src/features/error-handling/enums/error-codes/app-unknown-error-codes.enum";
 import { appErrorResponseService } from "../services/app-error-response.service";
 import { jsonErrorBody } from "../utils/json-error-body.util";
 
@@ -17,7 +17,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
     const appFields = appErrorResponseService.getResponseFields(error);
 
     if (appFields !== null) {
-      console.error("AppError:", appFields.message, error);
+      console.error("SERVER AppError:", appFields.message, error);
 
       const response = sendResponse(
         jsonErrorBody({
@@ -39,23 +39,23 @@ export const withRouteErrorHandler: TRouteMiddleware<
     }
 
     if (error instanceof Error) {
-      console.error("Error:", error.message, error.stack);
+      console.error("SERVER Error:", error.message, error.stack);
 
       return sendResponse(
         jsonErrorBody({
           error: INTERNAL_SERVER_ERROR_MESSAGE,
-          error_code: INTERNAL_SERVER_ERROR_CODE,
+          error_code: APP_UNKNOWN_ERROR_TYPES_ENUM.APP_LEVEL_UNKNOWN_ERROR,
         }),
         { status: 500 },
       );
     }
 
-    console.error("Internal Server Error:", error);
+    console.error("SERVER Internal Server Error:", error);
 
     return sendResponse(
       jsonErrorBody({
         error: INTERNAL_SERVER_ERROR_MESSAGE,
-        error_code: INTERNAL_SERVER_ERROR_CODE,
+        error_code: APP_UNKNOWN_ERROR_TYPES_ENUM.APP_LEVEL_UNKNOWN_ERROR,
       }),
       { status: 500 },
     );
