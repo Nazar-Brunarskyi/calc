@@ -1,4 +1,4 @@
-import { AppError } from "@/app/api/_shared/features/error-handling/instances/app-error";
+import { AppLevelUnauthorizedError } from "@/app/api/_shared/features/error-handling/instances/unauthorized-error";
 import { createGlobalRouteHandler } from "@/app/api/_shared/route-handlers/global-route-handler.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
 import type { IUserMe } from "@/src/interfaces/user-me.interface";
@@ -8,18 +8,12 @@ type IMeSuccessBody = {
   user: IUserMe;
 };
 
-export const GET = createGlobalRouteHandler(
-  async () => {
-    const user = await getCurrentUserForPage();
+export const GET = createGlobalRouteHandler(async () => {
+  const user = await getCurrentUserForPage();
 
-    if (user === null) {
-      throw new AppError({
-        message: "Unauthorized",
-        statusCode: 401,
-        name: "unauthorized",
-      });
-    }
+  if (user === null) {
+    throw new AppLevelUnauthorizedError();
+  }
 
-    return sendResponse<IMeSuccessBody>({ user });
-  },
-);
+  return sendResponse<IMeSuccessBody>({ user });
+});
