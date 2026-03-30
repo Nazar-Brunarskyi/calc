@@ -1,5 +1,4 @@
 "use client";
-
 import { useAuthContext } from "@/src/features/auth/providers/auth-provider/auth-provider.component";
 import { TOASTER_TYPES_ENUM } from "@/src/features/error-handling/enums/snackbars/snackbars.enum";
 import { useShowAppToast } from "@/src/features/error-handling/hooks/use-show-app-toast.hook";

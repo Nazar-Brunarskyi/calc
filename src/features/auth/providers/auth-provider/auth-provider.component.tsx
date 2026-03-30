@@ -16,8 +16,14 @@ import {
   type ReactNode,
 } from "react";
 
+interface IUserLoaderState {
+  isUserLoading: boolean;
+  isUserFetching: boolean;
+  isUserPending: boolean;
+}
 interface IAuthContextValue {
   user: IUserMe | null;
+  userLoaderState: IUserLoaderState;
   setUser: (user: IUserMe | null) => void;
   refetchUser: () => Promise<QueryObserverResult<IUserMe | null, Error>>;
 }
@@ -31,7 +37,13 @@ interface IAuthProviderProps {
 
 export const AuthProvider = ({ children, initialUser }: IAuthProviderProps) => {
   const queryClient = useQueryClient();
-  const { data: user, refetch: refetchUser } = useMeQuery({ initialUser });
+  const {
+    data: user,
+    refetch: refetchUser,
+    isLoading: isUserLoading,
+    isFetching: isUserFetching,
+    isPending: isUserPending,
+  } = useMeQuery({ initialUser });
 
   const setUser = useCallback(
     (next: IUserMe | null) => {
@@ -40,13 +52,19 @@ export const AuthProvider = ({ children, initialUser }: IAuthProviderProps) => {
     [queryClient],
   );
 
-  const value = useMemo(
+  const value: IAuthContextValue = useMemo(
     () => ({
       user: user ?? null,
+      isUserLoading: isUserLoading || isUserFetching || isUserPending,
+      userLoaderState: {
+        isUserLoading,
+        isUserFetching,
+        isUserPending,
+      },
       setUser,
       refetchUser,
     }),
-    [user, setUser, refetchUser],
+    [user, setUser, refetchUser, isUserLoading, isUserFetching, isUserPending],
   );
 
   useEffect(() => {
