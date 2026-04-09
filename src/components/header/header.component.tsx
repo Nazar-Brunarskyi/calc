@@ -1,6 +1,7 @@
 import { cn } from "@/lib/shadcn/class-names.util";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { HeaderAccountNav } from "./components/header-account-nav/header-account-nav.component";
 
 interface IProps {
   title?: string;
@@ -8,11 +9,7 @@ interface IProps {
   children?: ReactNode;
 }
 
-export const Header = ({
-  title = "Calc",
-  className,
-  children,
-}: IProps) => {
+export const Header = ({ title = "Calc", className, children }: IProps) => {
   return (
     <header
       className={cn(
@@ -31,18 +28,7 @@ export const Header = ({
           aria-label="Main"
           className="flex items-center gap-4 text-sm font-medium"
         >
-          <Link
-            href="/profile"
-            className="text-muted-foreground transition hover:text-foreground"
-          >
-            Profile
-          </Link>
-          <Link
-            href="/login"
-            className="text-muted-foreground transition hover:text-foreground"
-          >
-            Login
-          </Link>
+          <HeaderAccountNav />
           {children}
         </nav>
       </div>

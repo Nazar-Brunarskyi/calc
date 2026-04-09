@@ -24,7 +24,11 @@ Reference for AI agents: **component name** → **path** from project root.
 | QueryClientProviderComponent | src/features/query/providers/query-client-provider.component.tsx |
 | ReactQueryDevtoolsLazy       | src/features/query/components/react-query-devtools-lazy.component.tsx |
 | Toaster (Sonner)             | components/ui/sonner.tsx                                            |
+| Button                       | components/ui/button.tsx                                            |
+| DropdownMenu (shadcn)        | components/ui/dropdown-menu.tsx                                       |
 | Header                       | src/components/header/header.component.tsx                          |
+| HeaderAccountNav             | src/components/header/components/header-account-nav/header-account-nav.component.tsx |
+| HeaderAccountNavLinkItem     | src/components/header/components/header-account-nav-link-item/header-account-nav-link-item.component.tsx |
 
 ## Notes
 
