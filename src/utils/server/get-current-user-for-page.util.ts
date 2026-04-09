@@ -25,7 +25,7 @@ const loadCurrentUserForPage = async (): Promise<IUserMe | null> => {
   }
 
   return userRepository.getMe({
-    id: session.userId,
+    id: String(session.user),
   });
 };
 

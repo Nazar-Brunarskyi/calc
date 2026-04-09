@@ -26,13 +26,14 @@ export const withAuthMiddleware: TRouteMiddleware<IRouteHandlerContext> = async 
   }
 
   const user = await userRepository.getAppUserById({
-    id: session.userId,
+    id: String(session.user),
   });
 
   if (user === null) {
     throw new AppLevelUnauthorizedError();
   }
 
+  context.session = session;
   context.user = user;
 
   return next();

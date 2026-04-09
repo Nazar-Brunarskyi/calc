@@ -1,3 +1,4 @@
+import { sessionRepository } from "@/app/api/_shared/repository/session/session.repository";
 import type { IRedirectResponseCookie } from "@/app/api/_shared/utils/redirect-response.util";
 import { redirectResponse } from "@/app/api/_shared/utils/redirect-response.util";
 import { SESSION_ID_COOKIE_NAME } from "@/src/constants/session-id-cookie.const";
@@ -9,6 +10,10 @@ export interface IBuildOauthRedirectProps {
   query: Record<string, string>;
   stateCookieName: string;
   extraCookies?: IRedirectResponseCookie[];
+}
+
+export interface ILogoutProps {
+  sessionId: string;
 }
 
 const buildOauthRedirect = ({
@@ -60,7 +65,15 @@ const buildSessionIdCookieClear = (): IRedirectResponseCookie => ({
   },
 });
 
+const logout = async ({
+  sessionId,
+}: ILogoutProps): Promise<IRedirectResponseCookie> => {
+  await sessionRepository.deleteBySessionId({ sessionId });
+  return buildSessionIdCookieClear();
+};
+
 export const authService = {
   buildOauthRedirect,
   buildSessionIdCookieClear,
+  logout,
 };
