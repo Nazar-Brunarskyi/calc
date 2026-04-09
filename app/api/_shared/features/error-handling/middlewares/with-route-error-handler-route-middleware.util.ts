@@ -1,4 +1,3 @@
-import { applyCookiesToNextResponse } from "@/app/api/_shared/utils/apply-cookies-to-next-response.util";
 import { sendResponse } from "@/app/api/_shared/utils/send-response.util";
 import type { IRouteHandlerContext } from "@/lib/http/route-handler-context.interface";
 import type { TRouteMiddleware } from "@/lib/http/route-middleware.type";
@@ -19,24 +18,18 @@ export const withRouteErrorHandler: TRouteMiddleware<
     if (appFields !== null) {
       console.error("SERVER AppError:", appFields.message, error);
 
-      const response = sendResponse(
+      return sendResponse(
         jsonErrorBody({
           error: appFields.message,
           error_code: appFields.error_code,
           snackbar: appFields.snackbar,
           error_context: appFields.error_context,
         }),
-        { status: appFields.statusCode },
-      );
-
-      if (appFields.cookies !== undefined) {
-        applyCookiesToNextResponse({
-          response,
+        {
+          options: { status: appFields.statusCode },
           cookies: appFields.cookies,
-        });
-      }
-
-      return response;
+        },
+      );
     }
 
     if (error instanceof Error) {
@@ -47,7 +40,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
           error: INTERNAL_SERVER_ERROR_MESSAGE,
           error_code: APP_UNKNOWN_ERROR_TYPES_ENUM.APP_LEVEL_UNKNOWN_ERROR,
         }),
-        { status: 500 },
+        { options: { status: 500 } },
       );
     }
 
@@ -58,7 +51,7 @@ export const withRouteErrorHandler: TRouteMiddleware<
         error: INTERNAL_SERVER_ERROR_MESSAGE,
         error_code: APP_UNKNOWN_ERROR_TYPES_ENUM.APP_LEVEL_UNKNOWN_ERROR,
       }),
-      { status: 500 },
+      { options: { status: 500 } },
     );
   }
 };
