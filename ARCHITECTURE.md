@@ -242,7 +242,8 @@ Route handlers under `app/api/**/route.ts` should stay **thin**: compose HTTP (e
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app/api/_shared/repository/<entity>/`  | All **database access** for that entity used by API routes (e.g. `user.repository.ts`, `session.repository.ts`). Export a single object such as **`userRepository`** or **`sessionRepository`** (see below).                                                                                                                                                                       |
 | `app/api/_shared/mappers/`              | Pure **transformations** between persistence / schema types, API-layer shapes (`app/api/_shared/interfaces`), and shared domain shapes (`src/interfaces`). One module per concern, e.g. **`user.mapper.ts`** exporting **`userMapper`**. Add another **`<entity>.mapper.ts`** when that entity needs its own mapping; keep unrelated transforms out of the same file. Full **HTTP JSON** envelopes for routes live in **`src/DTOs/`** (compose **`src/interfaces`** fields as needed). |
-| `app/api/_shared/services/<domain>/`    | **Cross-provider** or shared API logic. Examples: OAuth redirect helpers — **`authService`** in `services/auth/auth.service.ts` (**`buildOauthRedirect`** clears state and can attach **`extraCookies`**, e.g. httpOnly **`session_id`** set after **`sessionRepository.createSessionForUser`** in the Google callback); **try/catch → `null`** helpers — **`tryCatchService`** in `services/try-catch/try-catch.service.ts` (`runSync` / `runAsync`) for flows that branch on failure without `let`. |
+| `app/api/_shared/services/<domain>/`    | **Cross-provider** or shared API logic. Example: **try/catch → `null`** helpers — **`tryCatchService`** in `services/try-catch/try-catch.service.ts` (`runSync` / `runAsync`) for flows that branch on failure without `let`. |
+| `app/api/_shared/features/auth/`       | **Shared auth** helpers used by routes and other features. **`authService`** in `features/auth/services/auth.service.ts` (**`buildOauthRedirect`** clears state and can attach **`extraCookies`**, e.g. httpOnly **`session_id`** set after **`sessionRepository.createSessionForUser`** in the Google callback; **`buildSessionIdCookieClear`** for **`AppLevelUnauthorizedError`**).                                                                                                                                                                              |
 | `app/api/_shared/interfaces/`           | **`interface`** modules for API-layer shapes that are not promoted to **`src/interfaces`** yet (or are **`app/api`-only**). Examples: **`app-user.interface.ts`** (**`IAppUser`**); **`redirect-response-cookie.interface.ts`** (**`IRedirectResponseCookie`**) for **`redirectResponse`** / **`applyCookiesToNextResponse`**. Route **`context`** optional fields (**`user`**, **`body`**, **`query`**) live on **`IRouteHandlerContext`** in **`lib/http/route-handler-context.interface.ts`**. Move to **`src/interfaces`** when shared with the client or app-wide outside **`app/api`**. |
 | `app/api/_shared/utils/`                | Small route-facing helpers (e.g. **`sendResponse`** in `send-response.util.ts` — generic JSON body type, often **`src/DTOs/<domain>/*.dto.ts`**; **`redirectResponse`** in `redirect-response.util.ts` for redirects that set cookies).                                                                                                                                                                                                           |
 | `app/api/auth/<provider>/_service/`    | **Provider-specific** orchestration in an underscore-prefixed folder (avoids a routable `service` segment). Example: Google in `_service/google-oauth.service.ts`. Export **`googleOAuthService`**.                                                                                                                                                                              |
@@ -250,13 +251,13 @@ Route handlers under `app/api/**/route.ts` should stay **thin**: compose HTTP (e
 **Export pattern — service/repository objects:** Do not export loose functions as the primary API. Export one **`camelCase` object** per module so call sites use a stable namespace:
 
 ```typescript
-// auth.service.ts
+// auth.service.ts (under features/auth/services/)
 export const authService = {
   buildOauthRedirect,
 };
 
 // Consumer
-import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { authService } from "@/app/api/_shared/features/auth/services/auth.service";
 
 authService.buildOauthRedirect({ ... });
 ```

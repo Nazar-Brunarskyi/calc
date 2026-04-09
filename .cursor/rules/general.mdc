@@ -111,7 +111,7 @@ export const authService = {
 ```
 
 ```typescript
-import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { authService } from "@/app/api/_shared/features/auth/services/auth.service";
 
 authService.buildOauthRedirect({ request, path, query, stateCookieName });
 ```

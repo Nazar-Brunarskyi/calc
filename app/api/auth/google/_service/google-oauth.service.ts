@@ -3,7 +3,7 @@ import {
   sessionRepository,
 } from "@/app/api/_shared/repository/session/session.repository";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";
-import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { authService } from "@/app/api/_shared/features/auth/services/auth.service";
 import { tryCatchService } from "@/app/api/_shared/services/try-catch/try-catch.service";
 import type { IRedirectResponseCookie } from "@/app/api/_shared/utils/redirect-response.util";
 import { redirectResponse } from "@/app/api/_shared/utils/redirect-response.util";
