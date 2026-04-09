@@ -25,6 +25,12 @@ interface ISubstitutePlaceholdersProps {
   variables: InternalVariables;
 }
 
+interface IApplyFormulaStepProps {
+  entry: IFormula;
+  index: number;
+  variables: InternalVariables;
+}
+
 const PLACEHOLDER_PATTERN = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
 
 const SAFE_EXPRESSION_PATTERN = /^[0-9eE+\-*/().\s]+$/;
@@ -68,6 +74,7 @@ const evaluateExpandedExpression = (
         `Formula at step ${stepIndexOneBased} did not evaluate to a finite number`,
       );
     }
+
     return result;
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Formula at step")) {
@@ -78,15 +85,6 @@ const evaluateExpandedExpression = (
     );
   }
 };
-
-/**
- * PRIVATE
- */
-interface IApplyFormulaStepProps {
-  entry: IFormula;
-  index: number;
-  variables: InternalVariables;
-}
 
 /**
  * PRIVATE
