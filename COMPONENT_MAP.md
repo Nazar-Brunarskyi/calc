@@ -18,8 +18,8 @@ Reference for AI agents: **component name** → **path** from project root.
 | withoutAuth      | src/features/auth/components/HOCS/without-auth/without-auth.hoc.tsx          |
 | Home             | app/page.tsx                                                        |
 | LoginPage        | app/login/page.tsx                                                  |
-| ProfilePage      | app/profile/page.tsx                                                |
-| ProfileView      | app/profile/components/profile-view.component.tsx                 |
+| ProfilePage      | app/(auth)/profile/page.tsx                                         |
+| ProfileView      | app/(auth)/profile/components/profile-view.component.tsx            |
 | AuthProvider     | src/features/auth/providers/auth-provider/auth-provider.component.tsx             |
 | QueryClientProviderComponent | src/features/query/providers/query-client-provider.component.tsx |
 | ReactQueryDevtoolsLazy       | src/features/query/components/react-query-devtools-lazy.component.tsx |
