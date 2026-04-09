@@ -35,7 +35,9 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <QueryClientProviderComponent>
-          <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
+          <AuthProvider initialUser={initialUser}>
+            <main>{children}</main>
+          </AuthProvider>
         </QueryClientProviderComponent>
         <Toaster />
       </body>

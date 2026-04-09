@@ -11,7 +11,7 @@ export const GET = createRouteHandler(async () => {
   if (env === null) {
     return sendResponse(
       { error: "Google OAuth is not configured" },
-      { status: 500 },
+      { options: { status: 500 } },
     );
   }
   return googleOAuthService.createAuthorizeGoogleRedirect(env);

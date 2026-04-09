@@ -34,7 +34,7 @@ Use this workflow when:
 
 | Doc / code                                                                                                                 | Why                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/mappers`, `_shared/services`, `_shared/utils`, `auth/<provider>/_service`. |
+| [ARCHITECTURE.md](../../../ARCHITECTURE.md) §5                                                                             | Folder layout: `_shared/repository`, `_shared/mappers`, `_shared/services`, `_shared/features/auth`, `_shared/utils`, `auth/<provider>/_service`. |
 | [.cursor/rules/general.mdc](../../../.cursor/rules/general.mdc)                                                            | Arrow-only functions, `I*Props`, `no any`, service / repository / mapper object exports.                 |
 | [lib/http/README.md](../../../lib/http/README.md)                                                                          | `createRouteHandler`, middleware **`next()`**, **`createGlobalRouteHandler`** order, **App API route middleware** (auth, Zod body/query). |
 | [app/api/\_shared/route-handlers/global-route-handler.util.ts](../../../app/api/_shared/route-handlers/global-route-handler.util.ts) | Preset: composes `createRouteHandler` with **`withRouteErrorHandler`** + **`withMongoDbConnection`** + optional **`props.middleware`**; exported handler typed as **`TWrappedRouteHandler<IRouteHandlerContext>`** with a generic on **`createGlobalRouteHandler`** for extended **`context`** (see **`lib/http/README.md`**). |
@@ -55,12 +55,13 @@ Use this workflow when:
 | [src/features/error-handling/interfaces/zod-validation-failure.interface.ts](../../../src/features/error-handling/interfaces/zod-validation-failure.interface.ts) | **`IZodValidationFailure`** — **`success: false`** + Zod **`issues`**; nested under **`error_context.validation`** for **`ValidationError`**. |
 | [src/features/error-handling/enums/error-codes/index.ts](../../../src/features/error-handling/enums/error-codes/index.ts) | **`APP_ERROR_CODES_TYPE`** — union of API error-code enums; extend when adding **`*.enum.ts`** modules under **`error-codes/`**. **`APP_UNKNOWN_ERROR_TYPES_ENUM`** supplies **`APP_LEVEL_UNKNOWN_ERROR`** for generic **500** responses from **`withRouteErrorHandler`**. |
 | [app/api/\_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts](../../../app/api/_shared/route-handlers/with-mongodb-connection-route-middleware.util.ts) | App-level `await connectMongoDb(); return next()` middleware; pair with `createRouteHandler` or use via `createGlobalRouteHandler`. |
-| [app/api/\_shared/services/auth/auth.service.ts](../../../app/api/_shared/services/auth/auth.service.ts)                     | **`authService.buildOauthRedirect`** — optional **`extraCookies`** alongside cleared OAuth state cookie. |
+| [app/api/\_shared/features/auth/services/auth.service.ts](../../../app/api/_shared/features/auth/services/auth.service.ts)                     | **`authService.buildOauthRedirect`** — optional **`extraCookies`** alongside cleared OAuth state cookie; **`buildSessionIdCookieClear`**. |
 | [app/api/\_shared/services/try-catch/try-catch.service.ts](../../../app/api/_shared/services/try-catch/try-catch.service.ts) | `tryCatchService.runSync` / `runAsync` — result or `null` if callback throws.      |
 | [app/api/\_shared/repository/user/user.repository.ts](../../../app/api/_shared/repository/user/user.repository.ts)         | Example: `export const userRepository = { … }`.                                    |
 | [app/api/\_shared/mappers/user.mapper.ts](../../../app/api/_shared/mappers/user.mapper.ts)                                 | Example: `export const userMapper = { toAppUser, toUserMe }` — DB / **`IAppUser`** / **`src/interfaces`** shapes. |
 | [src/DTOs/me/get-me-response.dto.ts](../../../src/DTOs/me/get-me-response.dto.ts) | Shared **HTTP success body** `interface` (e.g. **`IGetMeResponseDto`**) for **`sendResponse`** and client typing; composes **`src/interfaces`**. |
 | [app/api/me/route.ts](../../../app/api/me/route.ts) | Thin **`GET`** with **`createGlobalRouteHandler`** + **`withAuthMiddleware`**; **`sendResponse<IGetMeResponseDto>({ user: userMapper.toUserMe(user) })`**. |
+| [app/api/auth/logout/route.ts](../../../app/api/auth/logout/route.ts) | Thin **`POST`**: **`withAuthMiddleware`** (context includes **`session`**); **`authService.logout`** clears server session and returns **`sendResponse<IPostLogoutResponseDto>({ ok: true }, { cookies: [sessionIdCookieClear] })`**. |
 | [app/api/test/body-validation/route.ts](../../../app/api/test/body-validation/route.ts) | Example **`POST`**: **`withAuthMiddleware`** + **`withValidatedBody(bodySchema)`**; request DTO + **`ZodType<IRequestDto>`**; generic **`IRouteHandlerContext & { user: IAppUser } & { body: … }`**. |
 | [app/api/\_shared/repository/session/session.repository.ts](../../../app/api/_shared/repository/session/session.repository.ts) | Example: `export const sessionRepository = { createSessionForUser }`; **`SESSION_MAX_AGE_SECONDS`** for cookie **`maxAge`**. |
 | [app/api/\_shared/utils/redirect-response.util.ts](../../../app/api/_shared/utils/redirect-response.util.ts)                 | **`redirectResponse`** — `NextResponse.redirect` plus optional cookie sets (used by `authService` and provider flows). |
@@ -76,7 +77,7 @@ Use this workflow when:
    - Pure **mapping** between persistence types, `app/api/_shared/interfaces`, and `src/interfaces` DTOs (no DB I/O).
    - Export: `export const userMapper = { toAppUser, toUserMe }` (name methods by intent, often `to*`).
 
-3. **Shared service** — `app/api/_shared/services/<domain>/<domain>.service.ts` (e.g. `auth/auth.service.ts`, `try-catch/try-catch.service.ts`)
+3. **Shared service** — `app/api/_shared/services/<domain>/<domain>.service.ts` (e.g. `try-catch/try-catch.service.ts`) or **`app/api/_shared/features/auth/services/auth.service.ts`** for cross-provider **auth** helpers (`authService`).
    - Logic **reused across providers** (redirect + cookie clearing, try/catch → `null` for uniform error branches).
    - Export: `export const authService = { … }`, `export const tryCatchService = { runSync, runAsync }`.
 
@@ -106,7 +107,7 @@ Use this workflow when:
 ## Example import shapes
 
 ```typescript
-import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { authService } from "@/app/api/_shared/features/auth/services/auth.service";
 import { userMapper } from "@/app/api/_shared/mappers/user.mapper";
 import { sessionRepository } from "@/app/api/_shared/repository/session/session.repository";
 import { userRepository } from "@/app/api/_shared/repository/user/user.repository";

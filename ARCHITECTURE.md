@@ -48,7 +48,7 @@ If a component is **reused across routes or app-wide**, place it in a global com
 - **shadcn/ui** primitives live under `components/ui/` (see `components.json`); register them in [COMPONENT_MAP.md](./COMPONENT_MAP.md) when added.
 - Typical contents: UI primitives (buttons, inputs, modals), layout shells, and other shared building blocks.
 
-**Example:**
+**Example (single file):**
 
 ```text
 src/
@@ -64,6 +64,36 @@ import { PrimaryButton } from "@/src/components/primary-button.component";
 export default function SomePage() {
   return <PrimaryButton>Click me</PrimaryButton>;
 }
+```
+
+### Structure: single module vs composite (`src/components`)
+
+Use **kebab-case** and a **`.component.tsx`** suffix for React modules. Pick one of two layouts:
+
+| Layout | When to use | Layout on disk |
+| ------ | ----------- | ---------------- |
+| **Single file** | One self-contained component with no colocated sub-UI | `src/components/<name>.component.tsx` |
+| **Composite folder** | A shell (header, sidebar, etc.) with several internal pieces only used together | Folder per composite with a **`components/`** subfolder for its children |
+
+**Composite rules:**
+
+1. **Public entry** — `src/components/<composite-name>/<composite-name>.component.tsx` (what the rest of the app imports).
+2. **Local-only subcomponents** — under **`src/components/<composite-name>/components/`**. Each subcomponent is **one folder, one module file inside**, same pattern as `src/features/<feature>/components/` (e.g. `header-account-nav/header-account-nav.component.tsx`).
+3. **No nested `components` trees** — do **not** put `components/` inside another subcomponent folder. Subcomponents that belong to the same composite are **siblings** under `src/components/<composite-name>/components/`. If a piece becomes shared app-wide, move it to `components/ui/` (shadcn), `src/components/<other-name>/`, or `src/features/<feature>/components/` instead of nesting deeper.
+4. **Imports** — App code imports the composite from `@/src/components/<composite-name>/<composite-name>.component`. Subcomponents under `components/` import siblings with relative paths (e.g. `../header-account-nav-link-item/...`).
+
+**Example (composite):**
+
+```text
+src/
+  components/
+    header/
+      header.component.tsx
+      components/
+        header-account-nav/
+          header-account-nav.component.tsx
+        header-account-nav-link-item/
+          header-account-nav-link-item.component.tsx
 ```
 
 ### 3. Shared `src` tree — types, interfaces, constants, hooks, and utils
@@ -147,11 +177,10 @@ The app uses [**TanStack Query**](https://tanstack.com/query) (**`@tanstack/reac
 - **Consumers:** Hooks run in **client** components (`"use client"`). Server Components stay async/RSC unless you add prefetch + hydration later.
 - **Fetching:** Prefer **`fetchApiJson`** and **`FetchApiError`** from **`src/utils/fetch-api-json.util.ts`** in **`queryFn`** / **`mutationFn`** for typed JSON and **`credentials: "include"`** on **`/api/**`**. Non-OK responses throw **`FetchApiError`** with **`body`** shaped as **`IApiErrorBody`** (optional **`error_code`**, **`snackbar`**, etc.). Do not move that into **`fetchApiJson`**; keep **`fetchApiJson`** a thin transport layer. Reuse **`src/interfaces`** and **`src/DTOs`** for success bodies.
 - **`useAppQuery`** (**`src/hooks/api/_shared/use-app-query.hook.ts`**): Use this instead of calling **`useQuery`** directly for **read** hooks that hit **`/api/**`**. It forwards options to **`useQuery`** with **`retry: false`** and wraps **`queryFn`** using **`useGlobalErrorHandlers().wrapFunction`**. When the inner **`queryFn`** throws **`FetchApiError`** and **`error.body.error_code`** matches a registered handler, that handler runs and the wrapped **`queryFn`** returns **`null`** (query succeeds with **`data: null`**) instead of leaving the query in **error** state. Unmatched **`FetchApiError`** and other errors still propagate.
+- **`useAppMutation`** (**`src/hooks/api/_shared/use-app-mutation.hook.ts`**): Prefer this over raw **`useMutation`** for **write** hooks that call **`/api/**`** and should use the same **`useGlobalErrorHandlers().wrapFunction`** behavior as **`useAppQuery`**. It forwards options to **`useMutation`** and wraps **`mutationFn`** so a **`FetchApiError`** with a registered **`error.body.error_code`** runs the global handler and the mutation settles as **success** (e.g. **`data: null`** on the handled path) instead of **`isError`**. **`mutationFn`** still uses **`fetchApiJson`** (or your transport) inside the wrapper. Example: **`useLogoutMutation`** (**`src/hooks/api/auth/use-logout.mutation.hook.ts`**) posts to **`POST /api/auth/logout`**. For mutations that must **not** trigger global handlers, use **`useMutation`** and handle errors locally, or wrap only when needed with **`useErrorHandler`**.
 - **`useGlobalErrorHandlers`** (**`src/hooks/api/_shared/use-global-error-handlers.hook.ts`**): Client hook that registers app-wide **`FetchApiError`** handlers via **`useErrorHandler`**. Today this includes **`APP_LEVEL_UNAUTHORIZED`** → **`router.replace("/login")`** (see **`APP_UNAUTHORIZED_ERROR_TYPES_ENUM`**). Extend this module when new **global** client reactions to **`error_code`** are needed.
 - **`useErrorHandler`** (**`src/hooks/api/_shared/use-error-handler.hook.ts`**): Returns **`wrapFunction`**, which adapts a **`() => Promise<T>`** so **`FetchApiError`** with a matching **`error_code`** in **`errorHandlers`** runs the paired **`handler`** and yields **`null`**; otherwise the error rethrows. **`useGlobalErrorHandlers`** is the usual composition; use **`useErrorHandler`** directly only for localized or experimental handler lists (not duplicated in globals).
 - **Example — current user:** **`useMeQuery`** (**`src/hooks/api/user/use-me.query.hook.ts`**) calls **`fetchApiJson`** for **`GET /api/me`**. On **401**, the API returns JSON with **`APP_LEVEL_UNAUTHORIZED`**; **`fetchApiJson`** throws **`FetchApiError`**; the **`useAppQuery`** wrapper runs the global handler → **`replace("/login")`** and **`null`** data. **`AuthProvider`** uses **`useMeQuery({ initialUser })`**, re-seeds **`userQueryKeys.me()`** when **`initialUser`** changes, and surfaces **`userLoaderState`** through **`useAuthContext`** so UI can distinguish initial load, background fetch, and pending states.
-
-**Mutations:** There is no **`useAppMutation`** yet; **`mutationFn`** can still use **`fetchApiJson`**. If mutations need the same **`error_code`** → redirect (or snackbar) behavior, either call **`useGlobalErrorHandlers`**’ **`wrapFunction`** around the mutation function or add a shared mutation wrapper later.
 
 ### Front-end API error handling
 
@@ -192,7 +221,7 @@ Registers the app-wide **`errorHandlers`** list (currently **`APP_LEVEL_UNAUTHOR
 
 **6. Mutations and one-off fetches**
 
-**`useMutation`** does not go through **`useAppQuery`**. Wrap **`mutationFn`** with **`useGlobalErrorHandlers().wrapFunction`** (or **`useErrorHandler({ errorHandlers: [...] })`**) when you want the same **`error_code`** behavior, or use **`try` / `catch`** / **`onError`** for local handling only.
+**`useMutation`** does not go through **`useAppQuery`**. Prefer **`useAppMutation`** (see **TanStack Query** above) for **`/api/**`** writes that should share global **`error_code`** handling; otherwise wrap **`mutationFn`** with **`useGlobalErrorHandlers().wrapFunction`** (or **`useErrorHandler({ errorHandlers: [...] })`**) manually, or use **`try` / `catch`** / **`onError`** for local handling only.
 
 **7. Server vs browser**
 
@@ -242,7 +271,8 @@ Route handlers under `app/api/**/route.ts` should stay **thin**: compose HTTP (e
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app/api/_shared/repository/<entity>/`  | All **database access** for that entity used by API routes (e.g. `user.repository.ts`, `session.repository.ts`). Export a single object such as **`userRepository`** or **`sessionRepository`** (see below).                                                                                                                                                                       |
 | `app/api/_shared/mappers/`              | Pure **transformations** between persistence / schema types, API-layer shapes (`app/api/_shared/interfaces`), and shared domain shapes (`src/interfaces`). One module per concern, e.g. **`user.mapper.ts`** exporting **`userMapper`**. Add another **`<entity>.mapper.ts`** when that entity needs its own mapping; keep unrelated transforms out of the same file. Full **HTTP JSON** envelopes for routes live in **`src/DTOs/`** (compose **`src/interfaces`** fields as needed). |
-| `app/api/_shared/services/<domain>/`    | **Cross-provider** or shared API logic. Examples: OAuth redirect helpers — **`authService`** in `services/auth/auth.service.ts` (**`buildOauthRedirect`** clears state and can attach **`extraCookies`**, e.g. httpOnly **`session_id`** set after **`sessionRepository.createSessionForUser`** in the Google callback); **try/catch → `null`** helpers — **`tryCatchService`** in `services/try-catch/try-catch.service.ts` (`runSync` / `runAsync`) for flows that branch on failure without `let`. |
+| `app/api/_shared/services/<domain>/`    | **Cross-provider** or shared API logic. Example: **try/catch → `null`** helpers — **`tryCatchService`** in `services/try-catch/try-catch.service.ts` (`runSync` / `runAsync`) for flows that branch on failure without `let`. |
+| `app/api/_shared/features/auth/`       | **Shared auth** helpers used by routes and other features. **`authService`** in `features/auth/services/auth.service.ts` (**`buildOauthRedirect`** clears state and can attach **`extraCookies`**, e.g. httpOnly **`session_id`** set after **`sessionRepository.createSessionForUser`** in the Google callback; **`buildSessionIdCookieClear`** for **`AppLevelUnauthorizedError`**).                                                                                                                                                                              |
 | `app/api/_shared/interfaces/`           | **`interface`** modules for API-layer shapes that are not promoted to **`src/interfaces`** yet (or are **`app/api`-only**). Examples: **`app-user.interface.ts`** (**`IAppUser`**); **`redirect-response-cookie.interface.ts`** (**`IRedirectResponseCookie`**) for **`redirectResponse`** / **`applyCookiesToNextResponse`**. Route **`context`** optional fields (**`user`**, **`body`**, **`query`**) live on **`IRouteHandlerContext`** in **`lib/http/route-handler-context.interface.ts`**. Move to **`src/interfaces`** when shared with the client or app-wide outside **`app/api`**. |
 | `app/api/_shared/utils/`                | Small route-facing helpers (e.g. **`sendResponse`** in `send-response.util.ts` — generic JSON body type, often **`src/DTOs/<domain>/*.dto.ts`**; **`redirectResponse`** in `redirect-response.util.ts` for redirects that set cookies).                                                                                                                                                                                                           |
 | `app/api/auth/<provider>/_service/`    | **Provider-specific** orchestration in an underscore-prefixed folder (avoids a routable `service` segment). Example: Google in `_service/google-oauth.service.ts`. Export **`googleOAuthService`**.                                                                                                                                                                              |
@@ -250,13 +280,13 @@ Route handlers under `app/api/**/route.ts` should stay **thin**: compose HTTP (e
 **Export pattern — service/repository objects:** Do not export loose functions as the primary API. Export one **`camelCase` object** per module so call sites use a stable namespace:
 
 ```typescript
-// auth.service.ts
+// auth.service.ts (under features/auth/services/)
 export const authService = {
   buildOauthRedirect,
 };
 
 // Consumer
-import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { authService } from "@/app/api/_shared/features/auth/services/auth.service";
 
 authService.buildOauthRedirect({ ... });
 ```
@@ -278,4 +308,4 @@ Implementation details (arrow functions, `I*Props`, no `any`) follow [.cursor/ru
 
 ## Possible extensions
 
-Later guidelines can cover other naming topics and (if added) a **NestJS** backend and how it maps to this frontend. Client **data fetching** to **`app/api`** uses **TanStack Query** (see **TanStack Query** above). This file focuses on placement, colocation, the shared `src/` tree, **role suffixes** on filenames (`.type.ts`, `.interface.ts`, `.dto.ts`, `.hook.ts`, `.util.ts`, `.component.tsx`), and the App Router API layout under `app/api`.
+Later guidelines can cover other naming topics and (if added) a **NestJS** backend and how it maps to this frontend. Client **data fetching** to **`app/api`** uses **TanStack Query** (see **TanStack Query** above). This file focuses on placement, colocation, the shared `src/` tree, **structure rules for `src/components`** (see **§2 — Structure: single module vs composite**), **role suffixes** on filenames (`.type.ts`, `.interface.ts`, `.dto.ts`, `.hook.ts`, `.util.ts`, `.component.tsx`), and the App Router API layout under `app/api`.

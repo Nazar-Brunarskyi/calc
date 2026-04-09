@@ -10,6 +10,8 @@ export const GET = createGlobalRouteHandler<
   IRouteHandlerContext & { user: IAppUser }
 >(
   async (_request, { user }) =>
-    sendResponse<IGetMeResponseDto>({ user: userMapper.toUserMe(user) }),
+    sendResponse<IGetMeResponseDto>({
+      user: userMapper.toUserMe(user),
+    }),
   { middleware: [withAuthMiddleware] },
 );

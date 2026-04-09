@@ -1,5 +1,5 @@
 ---
-description: General TypeScript standards — API services/repositories/mappers export a single object (`authService`, `tryCatchService`, `userRepository`, `userMapper`); TanStack Query under `src/features/query/providers/` and `src/hooks/api/<domain>/` with `useAppQuery` / `_shared` error handlers for API reads; toasts via Sonner (`components/ui/sonner.tsx`, root `<Toaster />`, `useShowAppToast` + `ISnackbarArgs`); arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
+description: General TypeScript standards — shared `src/components` single-file vs composite (`components/` subfolder, sibling submodules only); API services/repositories/mappers export a single object (`authService`, `tryCatchService`, `userRepository`, `userMapper`); TanStack Query under `src/features/query/providers/` and `src/hooks/api/<domain>/` with `useAppQuery` / `_shared` error handlers for API reads; toasts via Sonner (`components/ui/sonner.tsx`, root `<Toaster />`, `useShowAppToast` + `ISnackbarArgs`); arrow functions only (no `function` keyword); filename role suffixes; no any; multi-arg functions use I<FuncName>Props; React uses IProps; see “Project Markdown files” for every repo *.md and when to open it
 alwaysApply: true
 ---
 
@@ -8,6 +8,8 @@ alwaysApply: true
 For **where** to put page-local vs app-wide code (components, `src/types`, `src/interfaces`, `src/DTOs`, `src/constants`, `src/hooks`, `src/hooks/api/<domain>/`, `src/features/<feature>/`), see the project’s [ARCHITECTURE.md](../../ARCHITECTURE.md) at the repository root. **`type`** definitions live under `src/types`; **`interface`** declarations live under `src/interfaces` (two separate folders); shared **HTTP JSON body** interfaces for routes and clients live under **`src/DTOs/<domain>/`** as **`*.dto.ts`**.
 
 Under **`src/features/<feature>/components/`** and **`src/features/<feature>/providers/`**, use **one folder per** component or provider; the module file sits inside that folder (e.g. **`src/features/auth/providers/auth-provider/auth-provider.component.tsx`**, **`src/features/auth/components/require-auth-gate/require-auth-gate.component.tsx`**). **Higher-order components** live under **`src/features/<feature>/components/HOCS/<hoc-name>/`** (e.g. **`src/features/auth/components/HOCS/with-auth/with-auth.hoc.tsx`**). **`QueryClientProviderComponent`** (TanStack Query) lives under **`src/features/query/providers/`** (same one-folder-per-module pattern when multiple files exist there). Folder placement and other layout rules are in that doc.
+
+**Shared `src/components` (global UI):** Use **`src/components`** for UI reused across routes (not feature-vertical slices). **Single-module** components: **`src/components/<name>.component.tsx`**. **Composite** shells (header, sidebar, etc.): public entry **`src/components/<composite-name>/<composite-name>.component.tsx`**; colocate sub-UI used **only** by that composite under **`src/components/<composite-name>/components/`** with **one folder per subcomponent** (same pattern as features). **Do not** nest **`components/`** inside another subcomponent folder — subcomponents are **siblings** under **`src/components/<composite-name>/components/`**. When a piece becomes shared app-wide, move it to **`components/ui/`** (shadcn), another top-level **`src/components/<...>/`**, or **`src/features/<feature>/components/`**. Imports: **`@/src/components/<composite>/<composite>.component`** for the entry; relative paths between sibling subcomponents. Details and examples: [ARCHITECTURE.md](../../ARCHITECTURE.md) §2 (**Structure: single module vs composite**).
 
 For reusable libraries under `lib/`, prefer a local `README.md` when usage is not obvious from the exports alone.
 
@@ -20,7 +22,7 @@ For reusable libraries under `lib/`, prefer a local `README.md` when usage is no
 Every `*.md` in the repo (add new docs here when you add files):
 
 - **[README.md](../../README.md)** — Project overview, stack, dev server, and links into the other root docs.
-- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components`, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`, `hooks/api/<domain>/`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Where pages, `src/` (`components` single-file vs composite, `features`, `types`, `interfaces`, `DTOs`, `constants`, `hooks`, `hooks/api/<domain>/`), `lib/`, and HTTP route helpers belong; path aliases and layout rules.
 - **[COMPONENT_MAP.md](../../COMPONENT_MAP.md)** — Catalog of UI components (name → path); check before new UI; update in the same change when the catalog changes.
 - **[db-schema.md](../../db-schema.md)** — MongoDB/Mongoose schema reference per entity, `ISchemaDefinition`, collections/models, and the `DB/*` import alias.
 - **[lib/http/README.md](../../lib/http/README.md)** — `createRouteHandler`, middleware **`next()`** / order / short-circuit, shared route types, typing dynamic `params`.
@@ -53,7 +55,8 @@ Use **`.tsx`** for React component files that contain JSX (not `.ts`). Apply the
 - **Hooks:** Add **`useQuery`** / **`useMutation`** wrappers under **`src/hooks/api/<domain>/`** as **`*.hook.ts`** (e.g. **`use-user-profile.query.hook.ts`**, **`use-save-profile.mutation.hook.ts`**). Consumers must be **client** components.
 - **Query keys:** Colocate **`*.query-keys.const.ts`** factories in the same **`src/hooks/api/<domain>/`** folder; use them for stable **`queryKey`** arrays.
 - **Reads — `useAppQuery`:** Prefer **`useAppQuery`** from **`src/hooks/api/_shared/use-app-query.hook.ts`** instead of raw **`useQuery`** for hooks that call **`/api/**`**. It sets **`retry: false`** and wraps **`queryFn`** with **`useGlobalErrorHandlers().wrapFunction`**, so **`FetchApiError`** with registered **`error.body.error_code`** values (e.g. **`APP_LEVEL_UNAUTHORIZED`** → **`replace("/login")`**) run without leaving the query in **error** state (handled path returns **`null`**). See **`use-error-handler.hook.ts`** and **`use-global-error-handlers.hook.ts`**.
-- **Client fetch:** Use **`fetchApiJson`** and **`FetchApiError`** from **`src/utils/fetch-api-json.util.ts`** for browser **`fetch`**, JSON parsing, and **`credentials: "include"`**. Non-OK responses throw **`FetchApiError`**; do not fold that into **`fetchApiJson`** — keep domain or global handling in hooks (**`useAppQuery`** / **`useErrorHandler`**) or explicit **`try`/`catch`** in **`queryFn`** / **`mutationFn`** when you intentionally bypass the global wrapper.
+- **Writes — `useAppMutation`:** Prefer **`useAppMutation`** from **`src/hooks/api/_shared/use-app-mutation.hook.ts`** instead of raw **`useMutation`** when the **`mutationFn`** calls **`/api/**`** and should use the same global **`error_code`** handling as **`useAppQuery`**.
+- **Client fetch:** Use **`fetchApiJson`** and **`FetchApiError`** from **`src/utils/fetch-api-json.util.ts`** for browser **`fetch`**, JSON parsing, and **`credentials: "include"`**. Non-OK responses throw **`FetchApiError`**; do not fold that into **`fetchApiJson`** — keep domain or global handling in hooks (**`useAppQuery`** / **`useAppMutation`** / **`useErrorHandler`**) or explicit **`try`/`catch`** in **`queryFn`** / **`mutationFn`** when you intentionally bypass the global wrapper.
 - **Front-end error pipeline:** **`IApiErrorBody`**, **`FetchApiError`**, **`error_code`** matching, TanStack **`isSuccess` / `isError`**, mutations, and RSC vs client — see [ARCHITECTURE.md](../../ARCHITECTURE.md) subsection **Front-end API error handling** (after **TanStack Query**).
 - **Toasts:** **`useShowAppToast`** + **`ISnackbarArgs`** / **`TOASTER_TYPES_ENUM`**; root **`Toaster`** — see [ARCHITECTURE.md](../../ARCHITECTURE.md) **Toasts (Sonner)** and the **Toasts (Sonner)** bullet under **App Router API routes** above.
 - **Same standards:** Arrow functions only, no **`any`**, multi-arg helpers use **`I<FuncName>Props`**.
@@ -111,7 +114,7 @@ export const authService = {
 ```
 
 ```typescript
-import { authService } from "@/app/api/_shared/services/auth/auth.service";
+import { authService } from "@/app/api/_shared/features/auth/services/auth.service";
 
 authService.buildOauthRedirect({ request, path, query, stateCookieName });
 ```
@@ -147,6 +150,7 @@ Before implementing **new** UI (a new component file or a one-off that could bec
 
 - **Check** whether something already exists under the listed paths (`components/ui/`, `src/components/`, `app/.../components/`, route layouts/pages).
 - **Prefer reuse:** import and compose or extend an existing component when it fits; avoid near-duplicates.
+- **Structure:** When adding **composite** shared UI under `src/components/<name>/`, follow **§2** in [ARCHITECTURE.md](../../ARCHITECTURE.md) (entry `*.component.tsx` + `components/` with **sibling** submodules only; no nested `components/` under a subcomponent).
 - **Keep the map current:** when you add, rename, move, or remove a component that belongs in the catalog, update `COMPONENT_MAP.md` in the **same** change (see ARCHITECTURE.md).
 
 ## No `any`

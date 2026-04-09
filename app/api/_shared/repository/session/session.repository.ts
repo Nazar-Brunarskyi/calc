@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { getSessionModel } from "DB/schemas/session";
+import type { ISessionSchema } from "@/lib/mongodb/schemas/session/session-schema.interface";
 import { DateTime } from "luxon";
 import mongoose from "mongoose";
 
@@ -15,9 +16,13 @@ export interface IFindSessionUserIdBySessionIdProps {
   sessionId: string;
 }
 
+export interface IDeleteBySessionIdProps {
+  sessionId: string;
+}
+
 const findSessionUserIdBySessionId = async ({
   sessionId,
-}: IFindSessionUserIdBySessionIdProps): Promise<{ userId: string } | null> => {
+}: IFindSessionUserIdBySessionIdProps): Promise<ISessionSchema | null> => {
   const Session = getSessionModel(mongoose);
   const session = await Session.findOne({
     sessionId,
@@ -29,7 +34,10 @@ const findSessionUserIdBySessionId = async ({
   }
 
   return {
-    userId: String(session.user),
+    _id: String(session._id),
+    sessionId: session.sessionId,
+    user: session.user,
+    expiresAt: session.expiresAt,
   };
 };
 
@@ -51,7 +59,15 @@ const createSessionForUser = async ({
   return { sessionId };
 };
 
+const deleteBySessionId = async ({
+  sessionId,
+}: IDeleteBySessionIdProps): Promise<void> => {
+  const Session = getSessionModel(mongoose);
+  await Session.deleteOne({ sessionId });
+};
+
 export const sessionRepository = {
   createSessionForUser,
   findSessionUserIdBySessionId,
+  deleteBySessionId,
 };
