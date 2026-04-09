@@ -3,7 +3,12 @@ import { withAuth } from "@/src/features/auth/components/HOCS/with-auth/with-aut
 import { ProfileView } from "./components/profile-view.component";
 
 const Page = () => {
-  console.log(calc({ value: 10, formulas: ["{init} + 5", "{step_1} + 5"] })); // TODO: remove console.log
+  console.log(
+    calc({
+      value: 10,
+      formulas: [{ formula: "{init} + 5" }, { formula: "{step_0} + 5" }],
+    }),
+  ); // TODO: remove console.log
   return <ProfileView />;
 };
 

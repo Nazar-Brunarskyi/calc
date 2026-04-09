@@ -1,28 +1,39 @@
+export interface IFormula {
+  variableName?: string;
+  formula: string;
+}
+
 export interface ICalcProps {
   value: number;
-  formulas: string[];
+  formulas: IFormula[];
 }
 
 export type Variables = Record<string, number>;
+export interface ICalcContext {
+  variables: InternalVariables;
+}
 
 type InternalVariables = Variables & { init: number };
 
-export interface ICalcContext {
+interface IGetStepVarProps {
+  formula: IFormula;
+  index: number;
+}
+
+interface ISubstitutePlaceholdersProps {
+  formula: string;
   variables: InternalVariables;
 }
 
 const PLACEHOLDER_PATTERN = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
 
-/** Allowed tokens after placeholders are replaced with numeric literals (JSON number in parentheses). */
 const SAFE_EXPRESSION_PATTERN = /^[0-9eE+\-*/().\s]+$/;
 
 /**
  * PRIVATE
  */
-interface ISubstitutePlaceholdersProps {
-  formula: string;
-  variables: InternalVariables;
-}
+const getStepVar = ({ formula, index }: IGetStepVarProps): string =>
+  formula.variableName ?? `step_${index}`;
 
 /**
  * PRIVATE
@@ -68,6 +79,47 @@ const evaluateExpandedExpression = (
   }
 };
 
+/**
+ * PRIVATE
+ */
+interface IApplyFormulaStepProps {
+  entry: IFormula;
+  index: number;
+  variables: InternalVariables;
+}
+
+/**
+ * PRIVATE
+ */
+const applyFormulaStep = ({
+  entry,
+  index,
+  variables,
+}: IApplyFormulaStepProps): void => {
+  const stepKey = getStepVar({ formula: entry, index });
+  const { formula: stepFormula } = entry;
+  const expanded = substitutePlaceholders({
+    formula: stepFormula,
+    variables,
+  });
+
+  const trimmed = expanded.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error(`Formula at step ${index + 1} is empty or whitespace-only`);
+  }
+
+  if (!SAFE_EXPRESSION_PATTERN.test(expanded)) {
+    throw new Error(
+      `Formula at step ${index + 1} contains invalid characters after substitution`,
+    );
+  }
+
+  const result = evaluateExpandedExpression(expanded, index + 1);
+
+  variables[stepKey] = result;
+};
+
 export const calc = ({ value, formulas }: ICalcProps): number => {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error("calc value must be a finite number");
@@ -82,24 +134,14 @@ export const calc = ({ value, formulas }: ICalcProps): number => {
   }
 
   for (let i = 0; i < formulas.length; i += 1) {
-    const formula = formulas[i];
-    const expanded = substitutePlaceholders({ formula, variables });
-    const trimmed = expanded.trim();
-
-    if (trimmed.length === 0) {
-      throw new Error(`Formula at step ${i + 1} is empty or whitespace-only`);
-    }
-
-    if (!SAFE_EXPRESSION_PATTERN.test(expanded)) {
-      throw new Error(
-        `Formula at step ${i + 1} contains invalid characters after substitution`,
-      );
-    }
-
-    const result = evaluateExpandedExpression(expanded, i + 1);
-    const stepKey = `step_${i + 1}`;
-    variables[stepKey] = result;
+    applyFormulaStep({ entry: formulas[i], index: i, variables });
   }
 
-  return variables[`step_${formulas.length}`];
+  const lastIndex = formulas.length - 1;
+  const lastKey = getStepVar({
+    formula: formulas[lastIndex],
+    index: lastIndex,
+  });
+
+  return variables[lastKey];
 };
