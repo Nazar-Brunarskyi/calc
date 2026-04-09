@@ -24,6 +24,7 @@ Reference for AI agents: **component name** → **path** from project root.
 | QueryClientProviderComponent | src/features/query/providers/query-client-provider.component.tsx |
 | ReactQueryDevtoolsLazy       | src/features/query/components/react-query-devtools-lazy.component.tsx |
 | Toaster (Sonner)             | components/ui/sonner.tsx                                            |
+| Header                       | src/components/header/header.component.tsx                          |
 
 ## Notes
 
