@@ -5,10 +5,13 @@ import { APP_UNAUTHORIZED_ERROR_TYPES_ENUM } from "@/src/features/error-handling
 import { TOASTER_TYPES_ENUM } from "@/src/features/error-handling/enums/snackbars/snackbars.enum";
 import { useShowAppToast } from "@/src/features/error-handling/hooks/use-show-app-toast.hook";
 import { useErrorHandler } from "@/src/hooks/api/_shared/use-error-handler.hook";
+import { userQueryKeys } from "@/src/hooks/api/user/user.query-keys.const";
 import { FetchApiError } from "@/src/utils/fetch-api-json.util";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 export const useGlobalErrorHandlers = () => {
+  const queryClient = useQueryClient();
   const { replace } = useRouter();
   const { showAppToast } = useShowAppToast();
 
@@ -17,6 +20,7 @@ export const useGlobalErrorHandlers = () => {
       {
         error_code: APP_UNAUTHORIZED_ERROR_TYPES_ENUM.APP_LEVEL_UNAUTHORIZED,
         handler: () => {
+          queryClient.setQueryData(userQueryKeys.me(), null);
           showAppToast({
             type: TOASTER_TYPES_ENUM.WARNING,
             title: "You are not authorized.",

@@ -48,7 +48,7 @@ If a component is **reused across routes or app-wide**, place it in a global com
 - **shadcn/ui** primitives live under `components/ui/` (see `components.json`); register them in [COMPONENT_MAP.md](./COMPONENT_MAP.md) when added.
 - Typical contents: UI primitives (buttons, inputs, modals), layout shells, and other shared building blocks.
 
-**Example:**
+**Example (single file):**
 
 ```text
 src/
@@ -64,6 +64,36 @@ import { PrimaryButton } from "@/src/components/primary-button.component";
 export default function SomePage() {
   return <PrimaryButton>Click me</PrimaryButton>;
 }
+```
+
+### Structure: single module vs composite (`src/components`)
+
+Use **kebab-case** and a **`.component.tsx`** suffix for React modules. Pick one of two layouts:
+
+| Layout | When to use | Layout on disk |
+| ------ | ----------- | ---------------- |
+| **Single file** | One self-contained component with no colocated sub-UI | `src/components/<name>.component.tsx` |
+| **Composite folder** | A shell (header, sidebar, etc.) with several internal pieces only used together | Folder per composite with a **`components/`** subfolder for its children |
+
+**Composite rules:**
+
+1. **Public entry** — `src/components/<composite-name>/<composite-name>.component.tsx` (what the rest of the app imports).
+2. **Local-only subcomponents** — under **`src/components/<composite-name>/components/`**. Each subcomponent is **one folder, one module file inside**, same pattern as `src/features/<feature>/components/` (e.g. `header-account-nav/header-account-nav.component.tsx`).
+3. **No nested `components` trees** — do **not** put `components/` inside another subcomponent folder. Subcomponents that belong to the same composite are **siblings** under `src/components/<composite-name>/components/`. If a piece becomes shared app-wide, move it to `components/ui/` (shadcn), `src/components/<other-name>/`, or `src/features/<feature>/components/` instead of nesting deeper.
+4. **Imports** — App code imports the composite from `@/src/components/<composite-name>/<composite-name>.component`. Subcomponents under `components/` import siblings with relative paths (e.g. `../header-account-nav-link-item/...`).
+
+**Example (composite):**
+
+```text
+src/
+  components/
+    header/
+      header.component.tsx
+      components/
+        header-account-nav/
+          header-account-nav.component.tsx
+        header-account-nav-link-item/
+          header-account-nav-link-item.component.tsx
 ```
 
 ### 3. Shared `src` tree — types, interfaces, constants, hooks, and utils
@@ -279,4 +309,4 @@ Implementation details (arrow functions, `I*Props`, no `any`) follow [.cursor/ru
 
 ## Possible extensions
 
-Later guidelines can cover other naming topics and (if added) a **NestJS** backend and how it maps to this frontend. Client **data fetching** to **`app/api`** uses **TanStack Query** (see **TanStack Query** above). This file focuses on placement, colocation, the shared `src/` tree, **role suffixes** on filenames (`.type.ts`, `.interface.ts`, `.dto.ts`, `.hook.ts`, `.util.ts`, `.component.tsx`), and the App Router API layout under `app/api`.
+Later guidelines can cover other naming topics and (if added) a **NestJS** backend and how it maps to this frontend. Client **data fetching** to **`app/api`** uses **TanStack Query** (see **TanStack Query** above). This file focuses on placement, colocation, the shared `src/` tree, **structure rules for `src/components`** (see **§2 — Structure: single module vs composite**), **role suffixes** on filenames (`.type.ts`, `.interface.ts`, `.dto.ts`, `.hook.ts`, `.util.ts`, `.component.tsx`), and the App Router API layout under `app/api`.

@@ -11,7 +11,7 @@ interface IProps {
 
 export const HeaderAccountNavLinkItem = ({ href, children }: IProps) => {
   return (
-    <DropdownMenuItem asChild>
+    <DropdownMenuItem asChild className="cursor-pointer">
       <Link href={href}>{children}</Link>
     </DropdownMenuItem>
   );

@@ -6,7 +6,7 @@ Reference for AI agents: **component name** → **path** from project root.
 
 - **When:** Update this file in the **same change** as add/rename/move/remove of a **React component module** (`*.tsx` / `*.jsx`) that is part of the app UI (pages, layouts, colocated route components, shared UI under `components/`, `src/components/`, or `src/features/**/components/` / `src/features/**/providers/`).
 - **Drift:** Row count changes over time; do not hardcode “N components” elsewhere — treat this file as the lookup source of truth.
-- **Placement rules:** See [ARCHITECTURE.md](./ARCHITECTURE.md) for where page-local vs shared components live.
+- **Placement rules:** See [ARCHITECTURE.md](./ARCHITECTURE.md) for where page-local vs shared components live and how **composite** shared UI under `src/components/<name>/` uses a **`components/`** subfolder (sibling submodules only; no nested `components/`).
 
 ## Components
 
@@ -28,6 +28,7 @@ Reference for AI agents: **component name** → **path** from project root.
 | DropdownMenu (shadcn)        | components/ui/dropdown-menu.tsx                                       |
 | Header                       | src/components/header/header.component.tsx                          |
 | HeaderAccountNav             | src/components/header/components/header-account-nav/header-account-nav.component.tsx |
+| HeaderAccountLogoutItem      | src/components/header/components/header-account-logout-item/header-account-logout-item.component.tsx |
 | HeaderAccountNavLinkItem     | src/components/header/components/header-account-nav-link-item/header-account-nav-link-item.component.tsx |
 
 ## Notes
